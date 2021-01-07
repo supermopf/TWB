@@ -60,11 +60,15 @@ class DataReader:
 
     @staticmethod
     def village_config_set(village_id, parameter, value):
+        try:
+            value = json.loads(value)
+        except:
+            pass
         with open('../config.json', 'r') as config_file:
             template = json.load(config_file, object_pairs_hook=collections.OrderedDict)
             if village_id not in template['villages']:
                 return False
-            template['villages'][str(village_id)][parameter] = json.loads(value)
+            template['villages'][str(village_id)][parameter] = value
             with open('../config.json', 'w') as newcf:
                 json.dump(template, newcf, indent=2, sort_keys=False)
                 print("Deployed new configuration file")
