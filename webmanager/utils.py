@@ -86,6 +86,30 @@ class DataReader:
                 cookies.append("%s=%s" % (c, session_data['cookies'][c]))
             session_data['raw'] = ';'.join(cookies)
             return session_data
+    @staticmethod
+    def set_session(cinp):
+        c_path = os.path.join("../cache", "session.json")
+        cookies = {}
+        cinp = cinp.strip()
+        for itt in cinp.split(';'):
+            itt = itt.strip()
+            kvs = itt.split("=")
+            k = kvs[0]
+            v = '='.join(kvs[1:])
+            cookies[k] = v
+
+        with open(c_path, 'r') as session_file:
+            session = json.load(session_file)
+        
+        with open(c_path, 'w') as f:
+            new_session = {
+                'endpoint': session["endpoint"],
+                'server': session["server"],
+                'cookies': cookies
+            }
+            json.dump(new_session, f)
+            print("Saved Session!")
+            return True
 
 
 class BuildingTemplateManager:
@@ -178,23 +202,29 @@ class MapBuilder:
 
 
 class BotManager:
-    pid = None
+    proc = None
+
+    def kill(self, proc_pid):
+        process = psutil.Process(proc_pid)
+        for proc in process.children(recursive=True):
+            proc.kill()
+        process.kill()
+        self.proc = None
 
     def is_running(self):
-        if not self.pid:
+        if self.proc is None or self.proc is False:
             return False
-        if psutil.pid_exists(self.pid):
+        if self.proc.poll() is not None or self.proc.poll() is not False:
             return True
-        self.pid = False
+        self.proc = False
         return False
 
     def start(self):
         wd = os.path.join(os.getcwd(), "..")
-        proc = subprocess.Popen("python twb.py", cwd=wd, shell=True)
-        self.pid = proc.pid
+        self.proc = subprocess.Popen("python twb.py", cwd=wd, stdout=subprocess.PIPE, shell=True)
         print("Bot started successfully")
 
     def stop(self):
         if self.is_running():
-            os.kill(self.pid, sig=0)
+            self.kill(self.proc.pid)
             print("Bot stopped successfully")

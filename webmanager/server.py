@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory, request, render_template
+from flask import Flask, jsonify, send_from_directory, request, render_template, redirect
 import os
 import json
 try:
@@ -12,7 +12,6 @@ bm = BotManager()
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
-
 
 def pre_process_bool(key, value, village_id=None):
     if village_id:
@@ -158,13 +157,13 @@ def get_vars():
 @app.route('/bot/start')
 def start_bot():
     bm.start()
-    return jsonify(bm.is_running())
+    return redirect("/")
 
 
 @app.route('/bot/stop')
 def stop_bot():
     bm.stop()
-    return jsonify(not bm.is_running())
+    return redirect("/")
 
 
 @app.route('/config', methods=['GET'])
@@ -236,7 +235,12 @@ def config_set():
 
     return jsonify(sync())
 
+@app.route('/app/session/set', methods=["POST"])
+def background_process_test():
+    data = request.form.get("session_data")
+    DataReader.set_session(data)
+    return redirect("/")
+    
 
-app.run()
-
+app.run(host= '0.0.0.0', port=8080)
 
