@@ -10,7 +10,8 @@ class Extractor:
         if type(res) != str:
             res = res.text
         builder = re.search('(?s)<table id="build_queue"(.+?)</table>', res)
-        end_first_b = re.search(r'data-endtime="(.+?)"', builder.group(1)).group(1)
+        if builder is None:
+            return [], []
         p = re.compile(r'<tr class=".+? buildorder_(.+?)"[ >].+?data-available-to="(.+?)"', re.M | re.S)
         queued = re.findall(p, builder.group(1))
 
