@@ -370,17 +370,19 @@ class TroopManager:
                 }
 
                 total_carry = 0
+                used_troops = []
                 for item in can_use:
                     item, carry = item.split(":")
                     if item == "knight":
                         continue
                     if item in disabled_units:
                         continue
-                    if item in troops and int(troops[item]) > 0:
+                    if item in troops and int(troops[item]) > 5:
                         payload[
                             "squad_requests[0][candidate_squad][unit_counts][%s]" % item
                         ] = troops[item]
                         total_carry += int(carry) * int(troops[item])
+                        used_troops.append(item)
                     else:
                         payload[
                             "squad_requests[0][candidate_squad][unit_counts][%s]" % item
@@ -396,6 +398,9 @@ class TroopManager:
                     )
                     self.last_gather = int(time.time())
                     self.logger.info(f"Using troops for gather operation: {selection}")
+                    for troop in used_troops:
+                        self.troops[troop] = 0
+
             else:
                 # Gathering already exists or locked
                 pass
@@ -529,6 +534,8 @@ class TroopManager:
         return False
 
     def reserve_resources(self, resources, wanted_times, has_times, unit_type):
+        if has_times == 0: # Can't recruit at all! No pops left?
+            return
         # Resources per unit, batch wanted, batch already recruiting
         self.logger.debug(f"Requesting resources to recruit {wanted_times - has_times} {unit_type}")
         for res in ["wood", "stone", "iron"]:

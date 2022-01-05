@@ -67,6 +67,11 @@ class BuildingManager:
             return False
 
         if existing_queue != 0 and existing_queue != len(self.waits):
+            self.logger.warning("Building queue out of sync, trying to load existing queue!")
+            self.load_existing_queue(main_data)
+            self.logger.info(f"Loaded {len(self.waits)} items from queue")
+
+        if existing_queue != 0 and existing_queue != len(self.waits):
             if existing_queue > 1:
                 self.logger.warning(
                     "Building queue out of sync, waiting until %d manual actions are finished!"
@@ -131,6 +136,10 @@ class BuildingManager:
     def get_existing_items(self, text):
         waits = Extractor.active_building_queue(text)
         return waits
+    
+    def load_existing_queue(self, text):
+        if self.waits == []:
+            self.waits = Extractor.new_active_building_queue(text)
 
     def has_enough(self, build_item):
         if (

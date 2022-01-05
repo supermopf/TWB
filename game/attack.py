@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
-from game.reports import ReportCache
+from game.reports import ReportCache, ReportManager
 
 
 class AttackManager:
@@ -16,6 +16,7 @@ class AttackManager:
     troopmanager = None
     wrapper = None
     targets = {}
+    priority_targets = {}
     logger = logging.getLogger("Attacks")
     max_farms = 15
     template = {}
@@ -53,8 +54,33 @@ class AttackManager:
         if not self.troopmanager.can_attack or self.troopmanager.troops == {}:
             return False
         self.get_targets()
+        self.priority_targets = self.repman.priority_farms(self.targets)
+        if len(self.priority_targets) > 0:
+            self.logger.info(f"Found {len(self.priority_targets)} priority targets!!!")
         ignored = []
+        # Priority targets first
+        for target in self.priority_targets[0 : self.max_farms]:
+            if type(self.template) == list:
+                f = False
+                for template in self.template:
+                    if template in ignored:
+                        continue
+                    out_res = self.send_farm(target, template)
+                    if out_res == 1:
+                        f = True
+                        break
+                    elif out_res == -1:
+                        ignored.append(template)
+                if not f:
+                    continue
+            else:
+                out_res = self.send_farm(target, self.template)
+                if out_res == -1:
+                    break
+
         for target in self.targets[0 : self.max_farms]:
+            if target in self.priority_targets:
+                continue # Don't farm the prio again
             if type(self.template) == list:
                 f = False
                 for template in self.template:
@@ -77,14 +103,27 @@ class AttackManager:
         target, distance = target
         missing = self.enough_in_village(template)
         if not missing:
-            cached = self.can_attack(vid=target["id"], clear=False)
+            is_priority = target in self.priority_targets
+            if is_priority:
+                self.logger.debug("Attacking priority target!!")
+                cache_entry = AttackCache.get_cache(target["id"])
+                last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
+                now = datetime.now()
+                if last_attack < now - timedelta(minutes=20):
+                    self.logger.debug(f"Last attack was on {last_attack}, sending again!")
+                    cached = True
+                else:
+                    cached = self.can_attack(vid=target["id"], clear=False)
+            else:
+                cached = self.can_attack(vid=target["id"], clear=False)
+            
             if cached:
                 attack_result = self.attack(target["id"], troops=template)
                 if attack_result == "forced_peace":
                     return 0
                 self.logger.info(
                     "Attacking %s -> %s (%s)"
-                    % (self.village_id, target["id"], str(template))
+                    % (self.village_id, f'{target["location"][0]}|{target["location"][1]}', str(template))
                 )
                 self.wrapper.reporter.report(
                     self.village_id,
@@ -285,6 +324,10 @@ class AttackManager:
             if res_left and total_loot > 100:
                 self.logger.debug(f"Draining farm of resources! Sending attack to get {res}.")
                 min_time = int(self.farm_high_prio_wait / 2)
+            
+            if total_loot == 0:
+                self.logger.debug(f"Farm empty! Extending farm time!")
+                min_time = int(min_time * 1.5)
 
         if cache_entry["last_attack"] + min_time > int(time.time()):
             self.logger.debug(
@@ -335,7 +378,7 @@ class AttackManager:
 
         self.logger.info(
             "[Attack] %s -> %s duration %f.1 h"
-            % (self.village_id, vid, duration / 3600)
+            % (self.village_id, f"{x}|{y}", duration / 3600)
         )
 
         confirm_data = {}

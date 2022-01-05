@@ -80,9 +80,12 @@ class ResourceManager:
     def can_recruit(self):
         if self.actual["pop"] == 0:
             self.logger.info("Can't recruit, no room for pops!")
+            to_remove = []
             for x in self.requested:
                 if "recruitment" in x:
-                    del self.requested[x]
+                    to_remove.append(x)
+            for x in to_remove:
+                del self.requested[x]
             return False
 
         for x in self.requested:

@@ -12,13 +12,28 @@ class ReportManager:
     village_id = None
     game_state = None
     logger = None
+
     last_reports = {}
 
     def __init__(self, wrapper=None, village_id=None):
         self.wrapper = wrapper
         self.village_id = village_id
     
-    
+    def priority_farms(self, farms):
+        priority = []
+        for farm in farms:
+            target, distance = farm
+            has_res, res = self.has_resources_left(target["id"])
+            if has_res:
+                total_loot = 0
+                for x in res:
+                    total_loot += int(res[x])
+                if total_loot > 2000:
+                    # Found priority farm!!!
+                    self.logger.debug(f'Found priority farm!! Total loot: {total_loot} Distance: {distance}')
+                    priority.append(farm)
+
+        return priority
     
     def has_resources_left(self, vid):
         possible_reports = []
@@ -35,11 +50,14 @@ class ReportManager:
 
         #self.logger.debug(f"Reports: {possible_reports}")
         entry = max(possible_reports, key=highest_when)
-        self.logger.debug(f'This is the newest? {datetime.fromtimestamp(int(entry["extra"]["when"]))}')
+        # self.logger.debug(f'This is the newest? {datetime.fromtimestamp(int(entry["extra"]["when"]))}')
         #self.logger.debug(f'{entry["extra"]["when"]} seems to be the last attack.')
         # last_loot = entry["extra"]["loot"] if "loot" in entry["extra"] else None
         if "resources" in entry["extra"] and entry["extra"]["resources"] != {}:
             return True, entry["extra"]["resources"]
+        else:
+            # self.logger.debug("No resources left according to last attack.")
+            return False, {}
 
     def safe_to_engage(self, vid):
         for repid in self.last_reports:

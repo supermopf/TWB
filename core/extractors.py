@@ -1,8 +1,31 @@
 import re
 import json
+from datetime import datetime, timedelta
 
 
 class Extractor:
+
+    @staticmethod
+    def new_active_building_queue(res):
+        if type(res) != str:
+            res = res.text
+        builder = re.search('(?s)<table id="build_queue"(.+?)</table>', res)
+        p = re.compile(r'<tr class=".+? buildorder_(.+?)"[ >].+?<td class="lit-item">.+?(\d{2}:\d{2}:\d{2})', re.M | re.S)
+        queued = re.findall(p, builder.group(1))
+        
+        previous_time = None
+        current_ts = []
+        for building, timestr in queued:
+            now = datetime.now()
+            startTime = datetime.strptime(timestr,"%H:%M:%S")
+            d = datetime.combine(datetime.today(), startTime.time())
+            if previous_time and d < previous_time:
+                d = d + timedelta(days = 1)
+            previous_time = d
+            ts = int(d.timestamp())
+            current_ts.append(ts)
+
+        return current_ts
 
     @staticmethod
     def village_data(res):
