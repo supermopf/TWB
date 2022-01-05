@@ -15,6 +15,7 @@ class Extractor:
         
         previous_time = None
         current_ts = []
+        buildings_q = []
         for building, timestr in queued:
             now = datetime.now()
             startTime = datetime.strptime(timestr,"%H:%M:%S")
@@ -23,9 +24,10 @@ class Extractor:
                 d = d + timedelta(days = 1)
             previous_time = d
             ts = int(d.timestamp())
+            buildings_q.append(building)
             current_ts.append(ts)
 
-        return current_ts
+        return current_ts, buildings_q
 
     @staticmethod
     def village_data(res):

@@ -55,6 +55,12 @@ class BuildingManager:
             tmp[e] = int(tmp[e])
         self.levels = tmp
         existing_queue = self.get_existing_items(main_data)
+        # Load the existing queue with times
+        if existing_queue != 0 and existing_queue != len(self.waits):
+            self.logger.info("Syncing building queue...")
+            self.load_existing_queue(main_data)
+            self.logger.info(f"Loaded {len(self.waits)} items from queue")
+
         if existing_queue == 0:
             self.waits = []
             self.waits_building = []
@@ -65,11 +71,6 @@ class BuildingManager:
             return False
         if not build:
             return False
-
-        if existing_queue != 0 and existing_queue != len(self.waits):
-            self.logger.warning("Building queue out of sync, trying to load existing queue!")
-            self.load_existing_queue(main_data)
-            self.logger.info(f"Loaded {len(self.waits)} items from queue")
 
         if existing_queue != 0 and existing_queue != len(self.waits):
             if existing_queue > 1:
@@ -139,7 +140,11 @@ class BuildingManager:
     
     def load_existing_queue(self, text):
         if self.waits == []:
-            self.waits = Extractor.new_active_building_queue(text)
+            self.waits, buildings = Extractor.new_active_building_queue(text)
+            for b in buildings:
+                # Update the building level, like queuing a new action
+                self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1}")
+                self.levels[b] += 1
 
     def has_enough(self, build_item):
         if (
