@@ -10,22 +10,15 @@ class Extractor:
         if type(res) != str:
             res = res.text
         builder = re.search('(?s)<table id="build_queue"(.+?)</table>', res)
-        p = re.compile(r'<tr class=".+? buildorder_(.+?)"[ >].+?<td class="lit-item">.+?(\d{2}:\d{2}:\d{2})', re.M | re.S)
+        end_first_b = re.search(r'data-endtime="(.+?)"', builder.group(1)).group(1)
+        p = re.compile(r'<tr class=".+? buildorder_(.+?)"[ >].+?data-available-to="(.+?)"', re.M | re.S)
         queued = re.findall(p, builder.group(1))
-        
-        previous_time = None
+
         current_ts = []
         buildings_q = []
         for building, timestr in queued:
-            now = datetime.now()
-            startTime = datetime.strptime(timestr,"%H:%M:%S")
-            d = datetime.combine(datetime.today(), startTime.time())
-            if previous_time and d < previous_time:
-                d = d + timedelta(days = 1)
-            previous_time = d
-            ts = int(d.timestamp())
             buildings_q.append(building)
-            current_ts.append(ts)
+            current_ts.append(int(timestr))
 
         return current_ts, buildings_q
 
@@ -149,6 +142,31 @@ class Extractor:
             res = res.text
         builder = re.findall(r'(?s)TrainOverview\.cancelOrder\((\d+)\)', res)
         return builder
+    
+    @staticmethod
+    def new_active_recruit_queue(res):
+        if type(res) != str:
+            res = res.text
+        builder = re.search('(?s)<div class="trainqueue_wrap"(.+?)<\/tbody>', res)
+        p = re.compile(r'class="unit_sprite unit_sprite_smaller (.+?)">.+?div>.+?(\d+).+<td class="lit-item">.+? (\d{2}:\d{2}:\d{2})', re.M | re.S)
+        queued = re.findall(p, builder.group(1))
+        previous_time = None
+        current_ts = []
+        units_q = []
+        for unit, amount, timestr in queued:
+            now = datetime.now()
+            startTime = datetime.strptime(timestr,"%H:%M:%S")
+            d = datetime.combine(datetime.today(), startTime.time())
+            if previous_time and d < previous_time:
+                d = d + timedelta(days = 1)
+            if d < now:
+                d = d + timedelta(days = 1)
+            previous_time = d
+            ts = int(d.timestamp())
+            units_q.append(unit)
+            current_ts.append(ts)
+
+        return current_ts, units_q
 
     @staticmethod
     def village_ids_from_overview(res):

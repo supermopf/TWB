@@ -2,6 +2,7 @@ from core.extractors import Extractor
 import time
 import logging
 import re
+from datetime import datetime
 
 
 class BuildingManager:
@@ -34,6 +35,12 @@ class BuildingManager:
             return self.start_update(build=build, set_village_name=set_village_name)
         self.costs = Extractor.building_data(main_data)
         self.game_state = Extractor.game_state(main_data)
+        # Check if premium account is active or not
+        if self.max_queue_len > 2:
+            if self.game_state['features']['Premium']['active'] == False:
+                self.logger.warning(f"Premium account seems to be inactive! You set a max length of {self.max_queue_len}. Without PA only 2 are allowed!")
+                self.max_queue_len = 2
+
         if self.resman:
             self.resman.update(self.game_state)
             if "building" in self.resman.requested:
@@ -54,16 +61,16 @@ class BuildingManager:
         for e in tmp:
             tmp[e] = int(tmp[e])
         self.levels = tmp
-        existing_queue = self.get_existing_items(main_data)
+        # existing_queue = self.get_existing_items(main_data)
         # Load the existing queue with times
-        if existing_queue != 0 and existing_queue != len(self.waits):
-            self.logger.info("Syncing building queue...")
-            self.load_existing_queue(main_data)
-            self.logger.info(f"Loaded {len(self.waits)} items from queue")
+        #if existing_queue != 0 and existing_queue != len(self.waits):
+        self.logger.info("Syncing building queue...")
+        self.load_existing_queue(main_data)
+        self.logger.info(f"Loaded {len(self.waits)} items from queue")
 
-        if existing_queue == 0:
-            self.waits = []
-            self.waits_building = []
+        # if existing_queue == 0:
+        #     self.waits = []
+        #     self.waits_building = []
         if self.is_queued():
             self.logger.info(
                 "No build operation was executed: queue full, %d left" % len(self.queue)
@@ -72,20 +79,28 @@ class BuildingManager:
         if not build:
             return False
 
-        if existing_queue != 0 and existing_queue != len(self.waits):
-            if existing_queue > 1:
-                self.logger.warning(
-                    "Building queue out of sync, waiting until %d manual actions are finished!"
-                    % existing_queue
-                )
-                return True
-            else:
-                self.logger.info("Just 1 manual action left, trying to queue next building")
+        # if existing_queue != 0 and existing_queue != len(self.waits):
+        #     if existing_queue > 1:
+        #         self.logger.warning(
+        #             "Building queue out of sync, waiting until %d manual actions are finished!"
+        #             % existing_queue
+        #         )
+        #         return True
+        #     else:
+        #         self.logger.info("Just 1 manual action left, trying to queue next building")
 
-        if existing_queue == 1:
-            r = self.max_queue_len - 1
-        else:
-            r = self.max_queue_len - len(self.waits)
+        # if existing_queue == 1:
+        #     r = self.max_queue_len - 1
+        # else:
+        self.logger.debug(f"Max queue: {self.max_queue_len} Current: {len(self.waits)}")
+        if len(self.waits) >= self.max_queue_len:
+            self.logger.info(
+                "No build more operations where executed (%d current, %d left)"
+                % (len(self.waits), len(self.queue))
+            )
+            return False
+
+        r = self.max_queue_len - len(self.waits)
         for x in range(r):
             result = self.get_next_building_action()
             if not result:
@@ -110,6 +125,7 @@ class BuildingManager:
                 % (self.village_id, self.wrapper.last_h, res.group(1))
             )
             self.logger.debug("Quick build action was completed, re-running function")
+            self.waits.pop(0)
             return True
         return False
 
@@ -139,12 +155,11 @@ class BuildingManager:
         return waits
     
     def load_existing_queue(self, text):
-        if self.waits == []:
-            self.waits, buildings = Extractor.new_active_building_queue(text)
-            for b in buildings:
-                # Update the building level, like queuing a new action
-                self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1}")
-                self.levels[b] += 1
+        self.waits, buildings = Extractor.new_active_building_queue(text)
+        for idx, b in enumerate(buildings):
+            # Update the building level, like queuing a new action
+            self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1} (Finishes at {datetime.fromtimestamp(self.waits[idx])})")
+            self.levels[b] += 1
 
     def has_enough(self, build_item):
         if (

@@ -377,7 +377,7 @@ class TroopManager:
                         continue
                     if item in disabled_units:
                         continue
-                    if item in troops and int(troops[item]) > 5:
+                    if item in troops and int(troops[item]) > 0:
                         payload[
                             "squad_requests[0][candidate_squad][unit_counts][%s]" % item
                         ] = troops[item]
@@ -388,7 +388,7 @@ class TroopManager:
                             "squad_requests[0][candidate_squad][unit_counts][%s]" % item
                         ] = "0"
                 payload["squad_requests[0][candidate_squad][carry_max]"] = str(total_carry)
-                if total_carry > 0:
+                if total_carry > 50:
                     payload["h"] = self.wrapper.last_h
                     self.wrapper.get_api_action(
                         action="send_squads",
@@ -397,9 +397,11 @@ class TroopManager:
                         village_id=self.village_id,
                     )
                     self.last_gather = int(time.time())
-                    self.logger.info(f"Using troops for gather operation: {selection}")
+                    self.logger.info(f"Using troops {used_troops} for gather operation: {selection}")
                     for troop in used_troops:
                         self.troops[troop] = 0
+                else:
+                    self.logger.info(f"Not enough troops to start gather operation: {used_troops} / {total_carry}")
 
             else:
                 # Gathering already exists or locked
@@ -426,6 +428,9 @@ class TroopManager:
                 % (self.village_id, building)
             )
             if not self.can_fix_queue:
+                done_ats, units = Extractor.new_active_recruit_queue(data)
+                self.wait_for[self.village_id][building] = int(done_ats[-1])
+                self.logger.info(f"Building {building} is currently busy building {units[-1]} until {self.readable_ts(int(done_ats[-1]))}")
                 return True
             for entry in existing:
                 self.cancel(building=building, id=entry)
