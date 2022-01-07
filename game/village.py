@@ -240,12 +240,15 @@ class Village:
         self.builder.max_queue_len = self.get_config(
             section="building", parameter="max_queued_items", default=2
         )
-        self.builder.start_update(
-            build=self.get_config(
-                section="building", parameter="manage_buildings", default=True
-            ),
-            set_village_name=self.village_set_name,
-        )
+        if "research" in self.resman.requested:
+            self.logger.info("Not building because research is needed")
+        else:
+            self.builder.start_update(
+                build=self.get_config(
+                    section="building", parameter="manage_buildings", default=True
+                ),
+                set_village_name=self.village_set_name,
+            )
 
         if not self.units:
             self.units = TroopManager(wrapper=self.wrapper, village_id=self.village_id)
@@ -318,8 +321,13 @@ class Village:
             self.units.randomize_unit_queue = self.get_config(
                 section="units", parameter="randomize_unit_queue", default=True
             )
+            if "research" in self.resman.requested:
+                self.logger.info("Not recruiting because research is needed")
+                for x in list(self.resman.requested.keys()):
+                    if "recruitment_" in x:
+                        self.resman.requested.pop(f"{x}", None)
             # prioritize_building: will only recruit when builder has sufficient funds for queue items
-            if (
+            elif (
                 self.get_village_config(
                     self.village_id, parameter="prioritize_building", default=False
                 )
