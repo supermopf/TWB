@@ -359,8 +359,8 @@ class TroopManager:
                     ]
                 if selection > 2:
                     can_use = [
-                        "spear:25",
-                        "sword:15",
+                        "axe:10",
+                        "light:80",
                         "archer:10",
                         "marcher:50",
                         "heavy:50",

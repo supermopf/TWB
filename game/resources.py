@@ -72,6 +72,7 @@ class ResourceManager:
             if all_good:
                 self.logger.info("Have enough storage to remove all resources from the market!")
                 self.drop_existing_trades()
+                self.resources_kept_safe = {}
 
     def do_premium_stuff(self):
         gpl = self.get_plenty_off()
