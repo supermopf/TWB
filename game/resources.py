@@ -2,7 +2,8 @@ import logging
 import time
 import re
 from core.extractors import Extractor
-
+from bs4 import BeautifulSoup as Soup
+import random
 
 class ResourceManager:
     actual = {}
@@ -21,6 +22,7 @@ class ResourceManager:
     wrapper = None
     village_id = None
     do_premium_trade = False
+    resources_kept_safe = {}
 
     def __init__(self, wrapper=None, village_id=None):
         self.wrapper = wrapper
@@ -38,6 +40,38 @@ class ResourceManager:
         self.logger = logging.getLogger(
             "Resource Manager: %s" % game_state["village"]["name"]
         )
+    
+    def any_resource_full(self):
+        for res in ['wood', 'stone', 'iron']:
+            if self.actual[res] == self.storage:
+                return True
+        return False
+    
+    def manage_full_resource(self):
+        if self.any_resource_full():
+            self.logger.info("Village storage is full! Trying to add resource to the market for safe keeping.")
+            for res in ['wood', 'stone', 'iron']:
+                if self.actual[res] == self.storage:
+                    counter = ['stone', 'wood', 'iron']
+                    counter.remove(res)
+                    c = random.choice(counter)
+                    self.logger.info(f"Adding {res} for {c} to market for safe keeping")
+                    if self.trade(res, 1000, c, 1000, False):
+                        self.actual[res] -= 1000
+                        if res in self.resources_kept_safe:
+                            self.resources_kept_safe[res] += 1000
+                        else:
+                            self.resources_kept_safe[res] = 1000
+        elif self.resources_kept_safe != {}:
+            self.logger.info('Kept resources safe, check if we have enough storage to get them back.')
+            all_good = True
+            for res in self.resources_kept_safe:
+                if self.actual[res] + self.resources_kept_safe[res] >= self.storage:
+                    all_good = False
+                    break
+            if all_good:
+                self.logger.info("Have enough storage to remove all resources from the market!")
+                self.drop_existing_trades()
 
     def do_premium_stuff(self):
         gpl = self.get_plenty_off()
@@ -150,7 +184,7 @@ class ResourceManager:
             return needed_the_most, needed_amount
         return None
 
-    def trade(self, me_item, me_amount, get_item, get_amount):
+    def trade(self, me_item, me_amount, get_item, get_amount, set_trade_time = True):
         url = "game.php?village=%s&screen=market&mode=own_offer" % self.village_id
         res = self.wrapper.get_url(url=url)
         if 'market_merchant_available_count">0' in res.text:
@@ -170,7 +204,8 @@ class ResourceManager:
             % self.village_id
         )
         self.wrapper.post_url(post_url, data=payload)
-        self.last_trade = int(time.time())
+        if set_trade_time:
+            self.last_trade = int(time.time())
         return True
 
     def drop_existing_trades(self):
@@ -205,6 +240,9 @@ class ResourceManager:
         return "%d:%02d:%02d" % (hour, minutes, seconds)
 
     def manage_market(self, drop_existing=True):
+        # Try to 'safe' resources on the market if nessesary
+        self.manage_full_resource()
+
         last = self.last_trade + int(3600 * self.trade_max_per_hour)
         if last > int(time.time()):
             self.logger.debug("Won't trade for %s" % (self.readable_ts(last)))
@@ -268,6 +306,22 @@ class ResourceManager:
 
                 self.trade(plenty, biased, item, how_many)
 
+    def get_incoming_resources(self, res):
+        soup = Soup(res, features="html.parser")
+        inc = soup.select_one('#market_status_bar table.vis:nth-of-type(2) th:nth-of-type(1)')
+        p = re.compile(r'\"icon header (.+?)\".+?<\/span>(.+?) <', re.S | re.M)
+        incoming = p.findall(str(inc))
+        resource_incoming = {}
+        for resource, amount_str in incoming:
+            try:
+                amount = int("".join([s for s in amount_str if s.isdigit()]))
+                resource_incoming[resource] = amount
+            except:
+                self.logger.warning(f'Unable to parse incoming resources! {resource} {amount_str}')
+                continue
+        
+        return resource_incoming
+    
     def check_other_offers(self, item, how_many, sell):
         willing_to_sell = self.actual[sell] - self.in_need_amount(sell) - 500
         # Always keep at least 500 in the bank
@@ -281,13 +335,10 @@ class ResourceManager:
             r"(?:<!-- insert the offer -->\n+)\s+<tr>(.*?)<\/tr>", re.S | re.M
         )
         cur_off_tds = p.findall(res.text)
-        p = re.compile(r'id="market_status_bar".+?\"icon header (.+?)\".+?<\/span>(.+?) ', re.S | re.M)
-        incoming = p.findall(res.text)
-        resource_incoming = {}
-        for res, amount_str in incoming:
-            amount = int("".join([s for s in amount_str if s.isdigit()]))
-            resource_incoming[res] = amount
-        
+        resource_incoming = self.get_incoming_resources(res.text)
+        if resource_incoming != {}:
+            self.logger.debug(f"Resource(s) incoming: {resource_incoming}")
+
         if item in resource_incoming:
             how_many = how_many - resource_incoming[item]
             if how_many < 1:

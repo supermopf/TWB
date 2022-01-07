@@ -107,6 +107,10 @@ class TroopManager:
 
     def start_update(self, building="barracks", disabled_units =[]):
 
+        if self.game_data["village"]["pop_max"] - self.game_data["village"]["pop"] == 0:
+            self.logger.debug("No room for units!")
+            return False
+
         if self.wait_for[self.village_id][building] > time.time():
             self.logger.info(
                 "%s still busy for %s"
@@ -511,6 +515,7 @@ class TroopManager:
         )
         if "game_data" in result:
             self.resman.update(result["game_data"])
+            self.game_data = result["game_data"]
             self.wait_for[self.village_id][building] = int(time.time()) + (
                 amount * int(resources["build_time"])
             )

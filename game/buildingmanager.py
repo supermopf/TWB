@@ -29,10 +29,8 @@ class BuildingManager:
         self.village_id = village_id
 
     def start_update(self, build=False, set_village_name=None):
-
         main_data = self.wrapper.get_action(village_id=self.village_id, action="main")
-        if self.complete_actions(main_data.text):
-            return self.start_update(build=build, set_village_name=set_village_name)
+        
         self.costs = Extractor.building_data(main_data)
         self.game_state = Extractor.game_state(main_data)
         # Check if premium account is active or not
@@ -53,9 +51,12 @@ class BuildingManager:
                 % self.village_id,
                 data={"name": set_village_name, "h": self.wrapper.last_h},
             )
-
+        vname = self.game_state["village"]["name"]
         if not self.logger:
             self.logger = logging.getLogger("Builder: %s" % vname)
+        if self.complete_actions(main_data.text):
+            return self.start_update(build=build, set_village_name=set_village_name)
+
         self.logger.debug("Updating building levels")
         tmp = self.game_state["village"]["buildings"]
         for e in tmp:
@@ -68,9 +69,6 @@ class BuildingManager:
         self.load_existing_queue(main_data)
         self.logger.info(f"Loaded {len(self.waits)} items from queue")
 
-        # if existing_queue == 0:
-        #     self.waits = []
-        #     self.waits_building = []
         if self.is_queued():
             self.logger.info(
                 "No build operation was executed: queue full, %d left" % len(self.queue)
@@ -79,19 +77,6 @@ class BuildingManager:
         if not build:
             return False
 
-        # if existing_queue != 0 and existing_queue != len(self.waits):
-        #     if existing_queue > 1:
-        #         self.logger.warning(
-        #             "Building queue out of sync, waiting until %d manual actions are finished!"
-        #             % existing_queue
-        #         )
-        #         return True
-        #     else:
-        #         self.logger.info("Just 1 manual action left, trying to queue next building")
-
-        # if existing_queue == 1:
-        #     r = self.max_queue_len - 1
-        # else:
         self.logger.debug(f"Max queue: {self.max_queue_len} Current: {len(self.waits)}")
         if len(self.waits) >= self.max_queue_len:
             self.logger.info(
@@ -155,8 +140,8 @@ class BuildingManager:
         return waits
     
     def load_existing_queue(self, text):
-        self.waits, buildings = Extractor.new_active_building_queue(text)
-        for idx, b in enumerate(buildings):
+        self.waits, self.waits_building = Extractor.new_active_building_queue(text)
+        for idx, b in enumerate(self.waits_building):
             # Update the building level, like queuing a new action
             self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1} (Finishes at {datetime.fromtimestamp(self.waits[idx])})")
             self.levels[b] += 1
@@ -232,16 +217,19 @@ class BuildingManager:
             return False
 
         if self.resman and self.resman.in_need_of("pop"):
-            build_data = "farm:%d" % (int(self.levels["farm"]) + 1)
-            if (
-                len(self.queue)
-                and "farm"
-                not in [x.split(":")[0] for x in self.queue[0 : self.max_lookahead]]
-                and int(self.levels["farm"]) != 30
-            ):
-                self.queue.insert(0, build_data)
-                self.logger.info("Adding farm in front of queue because low on pop")
-                return self.get_next_building_action(0)
+            if "farm" in self.waits_building:
+                self.logger.info(f"Low on pop, but farm already in queue as number {self.waits_building.index('farm') + 1}!")
+            else:
+                build_data = "farm:%d" % (int(self.levels["farm"]) + 1)
+                if (
+                    len(self.queue)
+                    and "farm"
+                    not in [x.split(":")[0] for x in self.queue[0 : self.max_lookahead]]
+                    and int(self.levels["farm"]) != 30
+                ):
+                    self.queue.insert(0, build_data)
+                    self.logger.info("Adding farm in front of queue because low on pop")
+                    return self.get_next_building_action(0)
 
         if len(self.queue):
             entry = self.queue[index]

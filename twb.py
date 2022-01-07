@@ -291,7 +291,7 @@ class TWB:
                         json.dump(config, newcf, indent=2, sort_keys=False)
                         print("Deployed new configuration file")
                 vnum = 1
-                for vil in self.villages:
+                for vil in list(set(self.villages)):
                     if result_villages and vil.village_id not in result_villages:
                         print(
                             "Village %s will be ignored because it is not available anymore"

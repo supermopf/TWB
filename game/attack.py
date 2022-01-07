@@ -22,6 +22,7 @@ class AttackManager:
     template = {}
     extra_farm = []
     repman = None
+    resman = None
     target_high_points = False
     farm_minpoints = 0
     farm_maxpoints = 1000

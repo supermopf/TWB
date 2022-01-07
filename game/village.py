@@ -385,8 +385,13 @@ class Village:
                 forced_peace = True
                 break
 
+        resources_full = False
+        if self.resman and self.resman.any_resource_full():
+            self.logger.warning("Resources full for village! Not sending out farming units nor are we gathering resources!")
+            resources_full = True
+
         # attack management
-        if not forced_peace and self.units.can_attack:
+        if not forced_peace and not resources_full and self.units.can_attack:
             if not self.area:
                 self.area = Map(wrapper=self.wrapper, village_id=self.village_id)
             self.area.get_map()
@@ -449,13 +454,14 @@ class Village:
         self.units.can_gather = self.get_village_config(
             self.village_id, parameter="gather_enabled", default=False
         )
-        if not self.def_man or not self.def_man.under_attack:
-            self.units.gather(
-                selection=self.get_village_config(
-                    self.village_id, parameter="gather_selection", default=1
-                ),
-                disabled_units=disabled_units,
-            )
+        if not resources_full:
+            if not self.def_man or not self.def_man.under_attack:
+                self.units.gather(
+                    selection=self.get_village_config(
+                        self.village_id, parameter="gather_selection", default=1
+                    ),
+                    disabled_units=disabled_units,
+                )
         # market management
         if self.get_config(
             section="market", parameter="auto_trade", default=False
