@@ -57,12 +57,15 @@
         "spear": 100,
         "sword": 50,
         "axe": 100
+      },
+      "stable": {
+        "spy": 10
       }
     },
-    "stable": {
-      "spy": 10
-    },
+    
     "farm": [
+        {"axe": 15, "spy": 1},
+        {"spear": 30, "spy": 1},
         {"axe": 15},
         {"spear": 30}
     ]
@@ -89,10 +92,10 @@
       }
     },
     "farm": [
-        {"spear": 50},
-        {"light": 5},
-        {"axe": 15},
-        {"spear": 30}
+        {"spear": 50, "spy": 1},
+        {"light": 5, "spy": 1},
+        {"axe": 15, "spy": 1},
+        {"spear": 30, "spy": 1}
     ]
   },
   {
@@ -111,7 +114,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 5, "spy": 1}
     ]
   },
   {
@@ -136,7 +139,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 5, "spy": 1}
     ]
   },
   {
@@ -162,7 +165,7 @@
       }
     },
     "farm": [
-        {"light": 10}
+        {"light": 10, "spy": 1}
     ]
   }
 ]
