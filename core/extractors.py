@@ -168,6 +168,25 @@ class Extractor:
             current_ts.append(ts)
 
         return current_ts, units_q
+    
+    @staticmethod
+    def active_attacks(res):
+        if type(res) != str:
+            res = res.text
+        builder = re.search('(?s)<div id="commands_outgoings"(.+?)<\/tbody>', res)
+        if not builder:
+            return [], []
+        p = re.compile(r'data-command-type="(.+?)">.+?data-endtime="(\d+)"', re.M | re.S)
+        queued = re.findall(p, builder.group(1))
+        outgoing = []
+        returning = []
+        for attack_or_return, timestr in queued:
+            if attack_or_return == 'return':
+                returning.append(int(timestr))
+            else:
+                outgoing.append(int(timestr))
+
+        return outgoing, returning
 
     @staticmethod
     def village_ids_from_overview(res):

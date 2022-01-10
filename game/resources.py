@@ -253,7 +253,7 @@ class ResourceManager:
         if get_h in range(0, 6) or get_h == 23:
             self.logger.debug("Not managing trades between 23h-6h")
             return
-        if drop_existing:
+        if drop_existing and self.resources_kept_safe == {}:
             self.drop_existing_trades()
 
         plenty = self.get_plenty_off()

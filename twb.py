@@ -291,6 +291,7 @@ class TWB:
                         json.dump(config, newcf, indent=2, sort_keys=False)
                         print("Deployed new configuration file")
                 vnum = 1
+                seconds_till_next_event = 1000000000000000000000000000000
                 for vil in list(set(self.villages)):
                     if result_villages and vil.village_id not in result_villages:
                         print(
@@ -312,6 +313,7 @@ class TWB:
                         template = template.replace("{num}", num_pad)
                         vil.village_set_name = template
 
+                    vil.next_event = {'kind': None, 'time': None}
                     vil.run(config=config, first_run=vnum == 1)
                     if (
                         vil.get_config(
@@ -324,6 +326,11 @@ class TWB:
                             if vil.def_man.allow_support_recv
                             else False
                         )
+                    vil.determine_next_building_done()
+                    vil.determine_next_recruitment()
+                    vil.determine_first_gather_back()
+                    if seconds_till_next_event > vil.get_seconds_till_next_event():
+                        seconds_till_next_event = vil.get_seconds_till_next_event()
                     vnum += 1
 
                 if len(defense_states) and config["farms"]["farm"]:
@@ -339,6 +346,13 @@ class TWB:
                 else:
                     if config["bot"]["inactive_still_active"]:
                         sleep = config["bot"]["inactive_delay"]
+
+                print("Seconds until next event: %s", seconds_till_next_event)
+                if sleep > seconds_till_next_event:
+                    print("Sleep would be more than the next event for a village!")
+                if sleep < seconds_till_next_event:
+                    print("Sleep is less than the next event for a village! Delaying until next event...")
+                    sleep = seconds_till_next_event
 
                 sleep += random.randint(20, 120)
                 dtn = datetime.datetime.now()

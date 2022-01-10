@@ -36,12 +36,54 @@ class Village:
     rep_man = None
     config = None
     village_set_name = None
+    next_event = {'kind': None, 'time': None}
 
     twp = TwPlus()
 
     def __init__(self, village_id=None, wrapper=None):
         self.village_id = village_id
         self.wrapper = wrapper
+    
+    def set_next_event(self, kind, time):
+        if not self.next_event['time']:
+            self.next_event['time'] = time
+            self.next_event['kind'] = kind
+        else:
+            if self.next_event['time'] > time:
+                self.next_event['time'] = time
+                self.next_event['kind'] = kind
+    
+    def get_seconds_till_next_event(self):
+        if self.next_event['time']:
+            stne = self.next_event['time'] - time.time()
+            self.logger.info(f"Seconds until next event: {stne} ({self.next_event['kind']})")
+            return stne
+        return 0
+    
+    def determine_next_back(self, res):
+        outgoing, returning = Extractor.active_attacks(res)
+
+        if len(returning) > 0:
+            first_back = datetime.fromtimestamp(min(returning))
+            self.logger.info(f"First attack to be back home is {first_back} | There are {len(returning)} coming back and {len(outgoing)} attacks underway.")
+            self.set_next_event('back', min(returning))
+    
+    def determine_next_building_done(self):
+        if not self.builder:
+            return
+        self.set_next_event('building', min(self.builder.waits))
+    
+    def determine_first_gather_back(self):
+        if not self.units:
+            return
+        if self.units.first_gathering_back:
+            self.set_next_event('gather', self.units.first_gathering_back)
+    
+    def determine_next_recruitment(self):
+        if not self.units:
+            return
+        for building in self.units.wait_for[self.village_id]:
+            self.set_next_event(f'recruit_{building}', self.units.wait_for[self.village_id][building])
 
     def get_config(self, section, parameter, default=None):
         if section not in self.config:
@@ -475,6 +517,9 @@ class Village:
             section="market", parameter="auto_trade", default=False
         ) and self.builder.get_level("market"):
             self.logger.info("Managing market")
+            if self.rep_man.trade_got_accepted:
+                self.logger.info("Our trade got accepted by someone, resetting trading.")
+                self.resman.last_trade = 0
             self.resman.trade_max_per_hour = self.get_config(
                 section="market", parameter="trade_max_per_hour", default=1
             )
@@ -495,6 +540,7 @@ class Village:
 
         res = self.wrapper.get_action(village_id=self.village_id, action="overview")
         self.game_data = Extractor.game_state(res)
+        self.determine_next_back(res)
         self.resman.update(self.game_data)
         if self.get_config(
             section="world", parameter="trade_for_premium", default=False

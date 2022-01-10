@@ -12,6 +12,7 @@ class ReportManager:
     village_id = None
     game_state = None
     logger = None
+    trade_got_accepted = False
 
     last_reports = {}
 
@@ -97,6 +98,7 @@ class ReportManager:
     def read(self, page=0, full_run=False):
         if not self.logger:
             self.logger = logging.getLogger("Reports")
+        self.trade_got_accepted = False
 
         if len(self.last_reports) == 0:
             self.logger.info("First run, re-reading cache entries")
@@ -127,8 +129,9 @@ class ReportManager:
                 if report_type == "ReportAttack":
                     self.attack_report(data.text, report_id)
                     continue
-
                 else:
+                    if report_type == "ReportAccept":
+                        self.trade_got_accepted = True
                     res = self.put(report_id, report_type=report_type)
                     self.last_reports[report_id] = res
         if new == 12 or full_run and page < 20:

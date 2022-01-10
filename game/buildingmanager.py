@@ -2,7 +2,7 @@ from core.extractors import Extractor
 import time
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class BuildingManager:
@@ -143,6 +143,7 @@ class BuildingManager:
         self.waits, self.waits_building = Extractor.new_active_building_queue(text)
         for idx, b in enumerate(self.waits_building):
             # Update the building level, like queuing a new action
+            self.waits[idx] = (datetime.fromtimestamp(self.waits[idx]) + timedelta(minutes=10)).timestamp()
             self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1} (Finishes at {datetime.fromtimestamp(self.waits[idx])})")
             self.levels[b] += 1
 

@@ -32,6 +32,7 @@ class TroopManager:
     logger = None
     max_batch_size = 50
     wait_for = {}
+    first_gathering_back = None
 
     _waits = {}
 
@@ -338,8 +339,14 @@ class TroopManager:
         village_data = Extractor.village_data(result)
 
         available_selection = 0
-
+        self.first_gathering_back = None
         for option in reversed(sorted(village_data['options'].keys())):
+            if village_data['options'][option]['scavenging_squad'] != None and 'return_time' in village_data['options'][option]['scavenging_squad']:
+                if self.first_gathering_back is None:
+                    self.first_gathering_back = village_data['options'][option]['scavenging_squad']['return_time']
+                elif village_data['options'][option]['scavenging_squad']['return_time'] < self.first_gathering_back:
+                    self.first_gathering_back = village_data['options'][option]['scavenging_squad']['return_time']
+            
             self.logger.debug(f"Option: {option} Locked? {village_data['options'][option]['is_locked']} Is underway? {village_data['options'][option]['scavenging_squad'] != None }")
             if int(option) <= selection and not village_data['options'][option]['is_locked'] and not village_data['options'][option]['scavenging_squad'] != None:
                 available_selection = int(option)
@@ -551,8 +558,6 @@ class TroopManager:
         for res in ["wood", "stone", "iron"]:
             req = resources[res] * (wanted_times - has_times)
             self.resman.request(source=f"recruitment_{unit_type}", resource=res, amount=req)
-
-
 
     def readable_ts(self, seconds):
         seconds -= time.time()
