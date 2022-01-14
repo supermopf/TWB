@@ -52,13 +52,19 @@ class AttackManager:
         return False
 
     def run(self):
-        if not self.troopmanager.can_attack or self.troopmanager.troops == {}:
+        if not self.troopmanager.can_attack:
             return False
+        if self.troopmanager.troops == {}:
+            self.troopmanager.update_totals()
+            if self.troopmanager.troops == {}:
+                self.logger.warning("No troops in village at all!")
+                return False
         self.get_targets()
         self.priority_targets = self.repman.priority_farms(self.targets)
         if len(self.priority_targets) > 0:
             self.logger.info(f"Found {len(self.priority_targets)} priority targets!!!")
         ignored = []
+        attacked = []
         # Priority targets first
         for target in self.priority_targets[0 : self.max_farms]:
             if type(self.template) == list:
@@ -69,6 +75,7 @@ class AttackManager:
                     out_res = self.send_farm(target, template)
                     if out_res == 1:
                         f = True
+                        attacked.append(target)
                         break
                     elif out_res == -1:
                         ignored.append(template)
@@ -90,6 +97,7 @@ class AttackManager:
                     out_res = self.send_farm(target, template)
                     if out_res == 1:
                         f = True
+                        attacked.append(target)
                         break
                     elif out_res == -1:
                         ignored.append(template)
@@ -99,6 +107,46 @@ class AttackManager:
                 out_res = self.send_farm(target, self.template)
                 if out_res == -1:
                     break
+        if self.troopmanager.can_scout:
+            max_scouts_used = int(int(self.troopmanager.total_troops["spy"]) / 2)
+            if (
+                "spy" not in self.troopmanager.troops
+                or int(self.troopmanager.troops["spy"]) < max_scouts_used
+            ):
+                self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Not enough to scout out farms...")
+            else:
+                self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Trying to scout unattacked farms, if not visted in a while...")
+                for target in self.targets:
+                    if int(self.troopmanager.troops["spy"]) < max([5, max_scouts_used]):
+                        self.logger.debug(f"Not enough spys left to scout with. Keeping {self.troopmanager.troops['spy']} in village.")
+                        return
+                    if target in attacked:
+                        continue
+                    target, distance = target
+                    cache_entry = AttackCache.get_cache(target["id"])
+                    last_report = self.repman.last_report_for(target["id"])
+                    if last_report:
+                        last_attack = datetime.fromtimestamp(last_report["extra"]["when"])
+                        if last_report['type'] == 'scout':
+                            now = datetime.now()
+                            if last_attack > now - timedelta(minutes=120):
+                                # Last scouted less then 2 hours ago, ignore scouting.
+                                continue
+                        self.logger.debug(f"Last {last_report['type']} report was at {last_attack}, sending scout...")
+                    if not cache_entry:
+                        # New target?
+                        self.logger.info(f'Scouting new farm grounds: {target}')
+                    if cache_entry:
+                        # Not a new target?
+                        last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
+                        now = datetime.now()
+                        if last_attack > now - timedelta(minutes=120):
+                            # Last attack less then 2 hours ago, ignore scouting.
+                            continue
+                        self.logger.debug(f"Last attack was at {last_attack}, sending scout...")
+                    if not self.scout(target["id"]):
+                        # All done for some reason
+                        break
 
     def send_farm(self, target, template):
         target, distance = target
@@ -251,7 +299,10 @@ class AttackManager:
             return False
         troops = {"spy": 5}
         if self.attack(vid, troops=troops):
+            # Lower the amount of spys
+            self.troopmanager.troops["spy"] = str(int(self.troopmanager.troops["spy"]) - 5)
             self.attacked(vid, scout=True, safe=False)
+            return True
 
     def can_attack(self, vid, clear=False):
         cache_entry = AttackCache.get_cache(vid)

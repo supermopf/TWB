@@ -95,7 +95,9 @@
         {"spear": 50, "spy": 1},
         {"light": 5, "spy": 1},
         {"axe": 15, "spy": 1},
-        {"spear": 30, "spy": 1}
+        {"spear": 30, "spy": 1},
+        {"axe": 15},
+        {"spear": 30}
     ]
   },
   {

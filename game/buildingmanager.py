@@ -28,6 +28,12 @@ class BuildingManager:
         self.wrapper = wrapper
         self.village_id = village_id
 
+    def update_building_levels(self):
+        tmp = self.game_state["village"]["buildings"]
+        for e in tmp:
+            tmp[e] = int(tmp[e])
+        self.levels = tmp
+
     def start_update(self, build=False, set_village_name=None):
         main_data = self.wrapper.get_action(village_id=self.village_id, action="main")
         
@@ -110,7 +116,8 @@ class BuildingManager:
                 % (self.village_id, self.wrapper.last_h, res.group(1))
             )
             self.logger.debug("Quick build action was completed, re-running function")
-            self.waits.pop(0)
+            if len(self.waits) > 0:
+                self.waits.pop(0)
             return True
         return False
 
@@ -220,6 +227,9 @@ class BuildingManager:
         if self.resman and self.resman.in_need_of("pop"):
             if "farm" in self.waits_building:
                 self.logger.info(f"Low on pop, but farm already in queue as number {self.waits_building.index('farm') + 1}!")
+                for x in self.resman.requested:
+                    if 'recruitment_' in x and 'pop' in self.resman.requested[x]:
+                        self.resman.requested[x]['pop'] = 0
             else:
                 build_data = "farm:%d" % (int(self.levels["farm"]) + 1)
                 if (
@@ -275,6 +285,9 @@ class BuildingManager:
                 result = self.wrapper.get_url(check["build_link"].replace("amp;", ""))
                 self.game_state = Extractor.game_state(result)
                 self.costs = Extractor.building_data(result)
+                if self.resman:
+                    for x in ["wood", "stone", "iron"]:
+                        self.resman.actual[x] -= check[x]
                 if self.resman and "building" in self.resman.requested:
                     # Build something, remove request
                     self.resman.requested["building"] = {}

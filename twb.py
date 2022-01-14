@@ -33,6 +33,7 @@ class TWB:
     wrapper = None
     should_run = True
     runs = 0
+    world_unit_speed = 1
 
     def internet_online(self, host="8.8.4.4", port=53, timeout=5):
         """
@@ -214,6 +215,14 @@ class TWB:
             else:
                 config["world"]["quests_enabled"] = False
 
+        if "speed" in config["world"] and "unit_speed" in config["world"]:
+            if not "world_unit_speed" in config["world"]:
+                changed = True
+                config["world"]["world_unit_speed"] = config["world"]["speed"] * config["world"]["unit_speed"]
+            elif config["world"]["world_unit_speed"] != config["world"]["speed"] * config["world"]["unit_speed"]:
+                changed = True
+                config["world"]["world_unit_speed"] = config["world"]["speed"] * config["world"]["unit_speed"]
+
         return changed, config
 
     def run(self):
@@ -343,16 +352,18 @@ class TWB:
                 get_h = time.localtime().tm_hour
                 if get_h in range(active_h[0], active_h[1]):
                     sleep = config["bot"]["active_delay"]
+                    print(f"Seconds until next event for a village: {round(seconds_till_next_event, 2)}")
+                    # if sleep > seconds_till_next_event:
+                    #     print("Sleep would be more than the next event for a village!")
+                    if sleep < seconds_till_next_event:
+                        print("Sleep is less than the next event for a village! Delaying until next event...")
+                        sleep = seconds_till_next_event
                 else:
                     if config["bot"]["inactive_still_active"]:
                         sleep = config["bot"]["inactive_delay"]
-
-                print("Seconds until next event: %s", seconds_till_next_event)
-                if sleep > seconds_till_next_event:
-                    print("Sleep would be more than the next event for a village!")
-                if sleep < seconds_till_next_event:
-                    print("Sleep is less than the next event for a village! Delaying until next event...")
-                    sleep = seconds_till_next_event
+                    else:
+                        print("Getting 7 hours of sleep! Probally the session will time-out!!")
+                        sleep = 25200
 
                 sleep += random.randint(20, 120)
                 dtn = datetime.datetime.now()
@@ -362,7 +373,7 @@ class TWB:
                     print("Optimizing farms")
                     VillageManager.farm_manager(verbose=True)
                 print(
-                    "Dead for %f.2 minutes (next run at: %s)" % (sleep / 60, dt_next.time())
+                    "Dead for %f minutes (next run at: %s)" % (round(sleep / 60, 2), dt_next.time())
                 )
                 sys.stdout.flush()
                 time.sleep(sleep)

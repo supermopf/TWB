@@ -19,6 +19,20 @@ class ReportManager:
     def __init__(self, wrapper=None, village_id=None):
         self.wrapper = wrapper
         self.village_id = village_id
+
+    def last_report_for(self, vid):
+        possible_reports = []
+        for repid in self.last_reports:
+            entry = self.last_reports[repid]
+            if vid == entry["dest"] and "when" in entry["extra"]:
+                possible_reports.append(entry)
+        if len(possible_reports) == 0:
+            return None
+        def highest_when(attack):
+            return datetime.fromtimestamp(int(attack["extra"]["when"]))
+
+        #self.logger.debug(f"Reports: {possible_reports}")
+        return max(possible_reports, key=highest_when)
     
     def priority_farms(self, farms):
         priority = []
@@ -32,6 +46,9 @@ class ReportManager:
                 if total_loot > 2000:
                     # Found priority farm!!!
                     self.logger.debug(f'Found priority farm!! Total loot: {total_loot} Distance: {distance}')
+                    priority.append(farm)
+                if 'unknown' in res:
+                    self.logger.debug(f"Last attack had no scout, but returned full! Distance: {distance}")
                     priority.append(farm)
 
         return priority
@@ -51,14 +68,45 @@ class ReportManager:
 
         #self.logger.debug(f"Reports: {possible_reports}")
         entry = max(possible_reports, key=highest_when)
-        # self.logger.debug(f'This is the newest? {datetime.fromtimestamp(int(entry["extra"]["when"]))}')
-        #self.logger.debug(f'{entry["extra"]["when"]} seems to be the last attack.')
-        # last_loot = entry["extra"]["loot"] if "loot" in entry["extra"] else None
-        if "resources" in entry["extra"] and entry["extra"]["resources"] != {}:
-            return True, entry["extra"]["resources"]
+        if "spy" in entry['extra']["units_sent"]:
+            if "resources" in entry["extra"] and entry["extra"]["resources"] != {}:
+                return True, entry["extra"]["resources"]
+            elif "resources" in entry["extra"] and entry["extra"]["resources"] == {}:
+                return False, {}
         else:
-            # self.logger.debug("No resources left according to last attack.")
-            return False, {}
+            return self.has_full_loot(entry), {'unknown': 1}
+
+    def has_full_loot(self, entry):
+        units_sent = entry["extra"]["units_sent"]
+        units_losses = entry["extra"]["units_losses"]
+        loot = entry["extra"]["loot"]
+        carry = [
+            "spear:25",
+            "sword:15",
+            "axe:10",
+            "spy:0",
+            "archer:10",
+            "light:80",
+            "marcher:50",
+            "heavy:50",
+            "knight:100",
+        ]
+        total_loot = 0
+        for x in loot:
+            total_loot += int(loot[x])
+
+        total_carry = 0
+        for unit in carry:
+            item, carry = unit.split(":")
+            if item in units_sent:
+                returning = units_sent[item]
+                if item in units_losses:
+                    returning -= units_losses[item]
+                total_carry += int(carry) * returning
+
+        self.logger.debug(f"Total loot: {total_loot} out of {total_carry} cap. Full? {total_carry == total_loot}")
+
+        return total_carry == total_loot
 
     def safe_to_engage(self, vid):
         for repid in self.last_reports:

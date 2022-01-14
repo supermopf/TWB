@@ -23,6 +23,7 @@ class ResourceManager:
     village_id = None
     do_premium_trade = False
     resources_kept_safe = {}
+    traded_resources = False
 
     def __init__(self, wrapper=None, village_id=None):
         self.wrapper = wrapper
@@ -206,10 +207,12 @@ class ResourceManager:
         )
         self.wrapper.post_url(post_url, data=payload)
         if set_trade_time:
+            self.traded_resources = True
             self.last_trade = int(time.time())
         return True
 
     def drop_existing_trades(self):
+        self.traded_resources = False
         url = "game.php?village=%s&screen=market&mode=all_own_offer" % self.village_id
         data = self.wrapper.get_url(url)
         existing = re.findall(r'data-id="(\d+)".+?data-village="(\d+)"', data.text)
@@ -253,7 +256,7 @@ class ResourceManager:
         if get_h in range(0, 6) or get_h == 23:
             self.logger.debug("Not managing trades between 23h-6h")
             return
-        if drop_existing and self.resources_kept_safe == {}:
+        if self.traded_resources and drop_existing and self.resources_kept_safe == {}:
             self.drop_existing_trades()
 
         plenty = self.get_plenty_off()

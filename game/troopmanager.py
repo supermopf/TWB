@@ -50,6 +50,20 @@ class TroopManager:
         "ram": "garage",
         "catapult": "garage",
     }
+    unit_speeds = {
+        "spear": 18,
+        "sword": 22,
+        "axe": 18,
+        "archer": 18,
+        "spy": 9,
+        "light": 10,
+        "marcher": 10,
+        "heavy": 11,
+        "ram": 30,
+        "catapult": 30,
+        "knight": 10,
+        "snob": 35
+    }
 
     wanted_levels = {}
 
@@ -67,7 +81,14 @@ class TroopManager:
                 wrapper=self.wrapper, village_id=self.village_id
             )
 
-    def update_totals(self):
+    def calc_unit_speed(self, unit, world_speed):
+        # unit speed / world speed == speed per cell
+        return self.unit_speeds[unit] / world_speed
+
+    def update_totals(self, first_run = False):
+        # if self.total_troops != {} and not first_run:
+        #     # No need to update if we already have the total!
+        #     return
         main_data = self.wrapper.get_action(
             action="overview", village_id=self.village_id
         )
@@ -190,6 +211,9 @@ class TroopManager:
         return parts[2] + (parts[1] * 60) + (parts[0] * 60 * 60)
 
     def attempt_upgrade(self):
+        if not self.logger:
+            self.update_totals()
+
         self.logger.debug("Managing Upgrades")
         if self._research_wait > time.time():
             self.logger.debug(
@@ -334,12 +358,16 @@ class TroopManager:
     def gather(self, selection=1, disabled_units=[]):
         if not self.can_gather:
             return False
+        if not self.logger:
+            self.update_totals()
+
         url = "game.php?village=%s&screen=place&mode=scavenge" % self.village_id
         result = self.wrapper.get_url(url=url)
         village_data = Extractor.village_data(result)
 
         available_selection = 0
         self.first_gathering_back = None
+        send_new_gather = False
         for option in reversed(sorted(village_data['options'].keys())):
             if village_data['options'][option]['scavenging_squad'] != None and 'return_time' in village_data['options'][option]['scavenging_squad']:
                 if self.first_gathering_back is None:
@@ -364,7 +392,7 @@ class TroopManager:
                         "heavy:50",
                         "knight:100",
                     ]
-                if selection > 2:
+                if selection > 1:
                     can_use = [
                         "axe:10",
                         "light:80",
@@ -409,6 +437,7 @@ class TroopManager:
                     )
                     self.last_gather = int(time.time())
                     self.logger.info(f"Using troops {used_troops} for gather operation: {selection}")
+                    send_new_gather = True
                     for troop in used_troops:
                         self.troops[troop] = 0
                 else:
@@ -419,6 +448,17 @@ class TroopManager:
                 pass
         
         self.logger.info("All gather operations are underway.")
+        if self.first_gathering_back is None and send_new_gather:
+            url = "game.php?village=%s&screen=place&mode=scavenge" % self.village_id
+            result = self.wrapper.get_url(url=url)
+            village_data = Extractor.village_data(result)
+            for option in reversed(sorted(village_data['options'].keys())):
+                if village_data['options'][option]['scavenging_squad'] != None and 'return_time' in village_data['options'][option]['scavenging_squad']:
+                    if self.first_gathering_back is None:
+                        self.first_gathering_back = village_data['options'][option]['scavenging_squad']['return_time']
+                    elif village_data['options'][option]['scavenging_squad']['return_time'] < self.first_gathering_back:
+                        self.first_gathering_back = village_data['options'][option]['scavenging_squad']['return_time']
+
         return True
 
     def cancel(self, building, id):
@@ -555,8 +595,11 @@ class TroopManager:
             return
         # Resources per unit, batch wanted, batch already recruiting
         self.logger.debug(f"Requesting resources to recruit {wanted_times - has_times} {unit_type}")
-        for res in ["wood", "stone", "iron"]:
+        for res in ["wood", "stone", "iron", "pop"]:
             req = resources[res] * (wanted_times - has_times)
+            if res == "pop" and req <= self.resman.actual["pop"]:
+                # Ignore pop requirements when satisfied
+                continue
             self.resman.request(source=f"recruitment_{unit_type}", resource=res, amount=req)
 
     def readable_ts(self, seconds):

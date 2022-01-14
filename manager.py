@@ -44,15 +44,15 @@ class VillageManager:
             if total_sent_count > 0:
                 percentage_lost = total_loss_count / total_sent_count * 100
 
-            perf = ""
+            perf = "Normal ".rjust(15)
             if data["high_profile"]:
-                perf = "High Profile "
+                perf = "High Profile ".rjust(15)
             if "low_profile" in data and data["low_profile"]:
-                perf = "Low Profile "
+                perf = "Low Profile ".rjust(15)
             if verbose:
                 print(
                     "%sFarm village %s attacked %d times - Total loot: %s - Total units lost: %s (%s)"
-                    % (perf, farm, len(num_attack), str(loot), str(total_loss_count), str(percentage_lost))
+                    % (perf, farm, len(num_attack), str(loot),str(total_loss_count), str(percentage_lost))
                 )
             if len(num_attack):
                 total = 0
@@ -68,6 +68,16 @@ class VillageManager:
                                 % (farm, total / len(num_attack))
                             )
                         data["low_profile"] = True
+                        AttackCache.set_cache(farm, data)
+                    elif total / len(num_attack) >= 100 and (
+                        "low_profile" in data and data["low_profile"]
+                    ):
+                        if verbose:
+                            print(
+                                "Farm %s had very low resources, now back up to normal? (%d avg total), resetting farm time"
+                                % (farm, total / len(num_attack))
+                            )
+                        data["low_profile"] = False
                         AttackCache.set_cache(farm, data)
                     elif total / len(num_attack) > 500 and (
                         "high_profile" not in data or not data["high_profile"]
