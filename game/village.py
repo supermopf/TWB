@@ -37,14 +37,14 @@ class Village:
     rep_man = None
     config = None
     village_set_name = None
-    next_event = {'kind': None, 'time': None}
+    next_event = {"kind": None, "time": None}
 
     twp = TwPlus()
 
     def __init__(self, village_id=None, wrapper=None):
         self.village_id = village_id
         self.wrapper = wrapper
-    
+
     def set_next_event(self, kind, time):
         if time == 0:
             # Ignore 0 timers!
@@ -55,24 +55,28 @@ class Village:
             # Ignore old timers
             return
 
-        if not self.next_event['time']:
-            self.next_event['time'] = time
-            self.next_event['kind'] = kind
+        if not self.next_event["time"]:
+            self.next_event["time"] = time
+            self.next_event["kind"] = kind
             self.logger.debug(f"Initial next event: {kind} at {time}")
         else:
             secs = time - tsdtn
-            self.logger.debug(f"Is {kind} at {time} sooner than {self.next_event['time']}? {self.next_event['time'] > time} Too soon? {secs < min_delay}")
-            if self.next_event['time'] > time and secs > min_delay:
-                self.next_event['time'] = time
-                self.next_event['kind'] = kind
-    
+            self.logger.debug(
+                f"Is {kind} at {time} sooner than {self.next_event['time']}? {self.next_event['time'] > time} Too soon? {secs < min_delay}"
+            )
+            if self.next_event["time"] > time and secs > min_delay:
+                self.next_event["time"] = time
+                self.next_event["kind"] = kind
+
     def get_seconds_till_next_event(self):
-        if self.next_event['time']:
-            stne = round(self.next_event['time'] - time.time(), 2)
-            self.logger.info(f"Seconds until next event: {stne} ({self.next_event['kind']})")
+        if self.next_event["time"]:
+            stne = round(self.next_event["time"] - time.time(), 2)
+            self.logger.info(
+                f"Seconds until next event: {stne} ({self.next_event['kind']})"
+            )
             return stne
         return 0
-    
+
     def determine_next_back(self, res):
         outgoing, returning = Extractor.active_attacks(res)
 
@@ -90,18 +94,22 @@ class Village:
                 back = min(returning)
                 secs = back - tsdtn
                 skipped += 1
-            
+
             if back is not None:
                 first_back = datetime.fromtimestamp(back)
-                self.logger.info(f"First attack to be back home is {first_back} (Skipped {skipped}) | There are {len(returning) + skipped} coming back and {len(outgoing)} attacks underway.")
-                self.set_next_event('back', back)
+                self.logger.info(
+                    f"First attack to be back home is {first_back} (Skipped {skipped}) | There are {len(returning) + skipped} coming back and {len(outgoing)} attacks underway."
+                )
+                self.set_next_event("back", back)
                 return
         # There are only outgoing attacks!
         if len(outgoing) > 0:
             first_back = datetime.fromtimestamp(min(outgoing))
-            self.logger.info(f"First attack to land is {first_back} | There are {len(outgoing)} attacks underway.")
-            self.set_next_event('outgoing', min(outgoing))
-    
+            self.logger.info(
+                f"First attack to land is {first_back} | There are {len(outgoing)} attacks underway."
+            )
+            self.set_next_event("outgoing", min(outgoing))
+
     def determine_next_building_done(self):
         if not self.builder:
             return
@@ -117,15 +125,18 @@ class Village:
         if not self.units:
             return
         if self.units.first_gathering_back:
-            self.set_next_event('gather', self.units.first_gathering_back)
-    
+            self.set_next_event("gather", self.units.first_gathering_back)
+
     def determine_next_recruitment(self):
         if not self.units:
             return
         for building in self.units.wait_for[self.village_id]:
             # Only send this when we are waiting for recruitment!
             if self.units.wait_for[self.village_id][building] > 0:
-                self.set_next_event(f'recruit_{building}', self.units.wait_for[self.village_id][building])
+                self.set_next_event(
+                    f"recruit_{building}",
+                    self.units.wait_for[self.village_id][building],
+                )
 
     def get_config(self, section, parameter, default=None):
         if section not in self.config:
@@ -191,19 +202,19 @@ class Village:
     def run_builder(self):
         if not self.builder:
             self.setup_builder()
-        
-        if (
-                self.get_village_config(
-                    self.village_id, parameter="prioritize_snob", default=False
-                )
-                and self.snobman
-                and self.snobman.can_snob
-                and self.snobman.is_incomplete
-            ):
-                self.logger.info("Not building because snob has insufficient funds!")
-                return
 
-        if 'snob' in self.resman.requested:
+        if (
+            self.get_village_config(
+                self.village_id, parameter="prioritize_snob", default=False
+            )
+            and self.snobman
+            and self.snobman.can_snob
+            and self.snobman.is_incomplete
+        ):
+            self.logger.info("Not building because snob has insufficient funds!")
+            return
+
+        if "snob" in self.resman.requested:
             self.logger.info("Not building because snob has insufficient funds!")
         elif "research" in self.resman.requested:
             self.logger.info("Not building because research is needed")
@@ -319,7 +330,9 @@ class Village:
                     disabled_units.extend(["archer", "marcher"])
 
                 if not self.get_config(
-                    section="world", parameter="building_destruction_enabled", default=True
+                    section="world",
+                    parameter="building_destruction_enabled",
+                    default=True,
                 ):
                     disabled_units.extend(["ram", "catapult"])
                 # do a build run for every
@@ -341,7 +354,9 @@ class Village:
         ) and self.builder.get_level("market"):
             self.logger.info("Managing market")
             if self.rep_man.trade_got_accepted:
-                self.logger.info("Our trade got accepted by someone, resetting trading.")
+                self.logger.info(
+                    "Our trade got accepted by someone, resetting trading."
+                )
                 self.resman.last_trade = 0
             self.resman.trade_max_per_hour = self.get_config(
                 section="market", parameter="trade_max_per_hour", default=1
@@ -375,30 +390,36 @@ class Village:
         if not self.builder:
             self.setup_builder()
         # Forced peace?
-        forced_peace_times = self.get_config(section="farms", parameter="forced_peace_times", default=[])
+        forced_peace_times = self.get_config(
+            section="farms", parameter="forced_peace_times", default=[]
+        )
         forced_peace = False
         forced_peace_today = False
         forced_peace_today_start = None
         for time_pairs in forced_peace_times:
-            start_dt = datetime.strptime(time_pairs["start"],"%d.%m.%y %H:%M:%S")
-            end_dt = datetime.strptime(time_pairs["end"],"%d.%m.%y %H:%M:%S")
+            start_dt = datetime.strptime(time_pairs["start"], "%d.%m.%y %H:%M:%S")
+            end_dt = datetime.strptime(time_pairs["end"], "%d.%m.%y %H:%M:%S")
             now = datetime.now()
             if start_dt.date() == datetime.today().date():
                 forced_peace_today = True
                 forced_peace_today_start = start_dt
-            if  now > start_dt and now < end_dt:
-                self.logger.debug("Currently in a forced peace time! No attacks will be send.")
+            if now > start_dt and now < end_dt:
+                self.logger.debug(
+                    "Currently in a forced peace time! No attacks will be send."
+                )
                 forced_peace = True
                 break
 
         resources_full = False
         if self.resman and self.resman.any_resource_full():
-            self.logger.warning("Resources full for village! Not sending out farming units nor are we gathering resources!")
+            self.logger.warning(
+                "Resources full for village! Not sending out farming units nor are we gathering resources!"
+            )
             resources_full = True
 
         # attack management
         if not forced_peace and not resources_full and self.units.can_attack:
-            
+
             if not self.area:
                 self.area = Map(wrapper=self.wrapper, village_id=self.village_id)
             self.area.get_map()
@@ -494,7 +515,7 @@ class Village:
 
     def run_research(self):
         if not self.units:
-            self.logger.debug('Skipping research for now.')
+            self.logger.debug("Skipping research for now.")
             return False
         if (
             self.get_config(section="units", parameter="upgrade", default=False)
@@ -520,7 +541,7 @@ class Village:
         if (
             self.get_village_config(self.village_id, parameter="snobs", default=None)
             and self.builder.levels["snob"] > 0
-            and not 'snob' in self.builder.waits_building
+            and not "snob" in self.builder.waits_building
         ):
             if not self.snobman:
                 self.snobman = SnobManager(
@@ -669,9 +690,16 @@ class Village:
         for u in Extractor.units_in_village(data):
             k, v = u
             self.units.troops[k] = v
-        
+
         # Act more human like and do things in an random(ish) order - Market is always last?
-        functions = [self.run_quests, self.run_builder, self.run_research, self.run_snob, self.run_recruit, self.run_attacks]
+        functions = [
+            self.run_quests,
+            self.run_builder,
+            self.run_research,
+            self.run_snob,
+            self.run_recruit,
+            self.run_attacks,
+        ]
         random.shuffle(functions)
         for func in functions:
             func()
@@ -691,17 +719,15 @@ class Village:
             if all(res == 0 for res in self.resman.requested[x].values()):
                 # remove empty requests!
                 to_dell.append(x)
-        
+
         for x in to_dell:
             self.resman.requested.pop(x)
-
 
         self.logger.debug("Current resources: %s" % str(self.resman.actual))
         self.logger.debug("Requested resources: %s" % str(self.resman.requested))
 
         # self.run_attacks()
 
-        
         # market management
         self.run_market()
 
@@ -710,8 +736,6 @@ class Village:
         self.determine_next_back(res)
         self.resman.update(self.game_data)
 
-        
-        
         self.set_cache_vars()
         self.logger.info("Village cycle done, returning to overview")
         self.wrapper.reporter.report(
@@ -752,27 +776,34 @@ class Village:
 
     def get_quest_rewards(self):
         result = self.wrapper.get_api_data(
-                action="quest_popup",
-                village_id=self.village_id,
-                params={"screen": 'new_quests', "tab": "main-tab", "quest": 0},
-            )
+            action="quest_popup",
+            village_id=self.village_id,
+            params={"screen": "new_quests", "tab": "main-tab", "quest": 0},
+        )
         # The data is escaped for JS, so unescape it before sending it to the extractor.
-        rewards = Extractor.get_quest_rewards(decode(result["response"]["dialog"], 'unicode-escape'))
+        rewards = Extractor.get_quest_rewards(
+            decode(result["response"]["dialog"], "unicode-escape")
+        )
         for reward in rewards:
             # First check if there is enough room for storing the reward
             for t_resource in reward["reward"]:
-                if self.resman.storage - self.resman.actual[t_resource] < reward["reward"][t_resource]:
-                    self.logger.info(f"Not enough room to store the {t_resource} part of the reward")
+                if (
+                    self.resman.storage - self.resman.actual[t_resource]
+                    < reward["reward"][t_resource]
+                ):
+                    self.logger.info(
+                        f"Not enough room to store the {t_resource} part of the reward"
+                    )
                     return False
 
             qres = self.wrapper.post_api_data(
                 action="claim_reward",
                 village_id=self.village_id,
                 params={"screen": "new_quests"},
-                data={"reward_id": reward["id"]}
+                data={"reward_id": reward["id"]},
             )
             if qres:
-                if qres['response'] == False:
+                if qres["response"] == False:
                     self.logger.debug(f"Error getting reward! {qres}")
                     return False
                 else:

@@ -218,10 +218,17 @@ class TWB:
         if "speed" in config["world"] and "unit_speed" in config["world"]:
             if not "world_unit_speed" in config["world"]:
                 changed = True
-                config["world"]["world_unit_speed"] = config["world"]["speed"] * config["world"]["unit_speed"]
-            elif config["world"]["world_unit_speed"] != config["world"]["speed"] * config["world"]["unit_speed"]:
+                config["world"]["world_unit_speed"] = (
+                    config["world"]["speed"] * config["world"]["unit_speed"]
+                )
+            elif (
+                config["world"]["world_unit_speed"]
+                != config["world"]["speed"] * config["world"]["unit_speed"]
+            ):
                 changed = True
-                config["world"]["world_unit_speed"] = config["world"]["speed"] * config["world"]["unit_speed"]
+                config["world"]["world_unit_speed"] = (
+                    config["world"]["speed"] * config["world"]["unit_speed"]
+                )
 
         return changed, config
 
@@ -286,7 +293,8 @@ class TWB:
                 dtn = datetime.datetime.now()
                 dt_next = dtn + datetime.timedelta(0, sleep)
                 print(
-                    "Dead for %f.2 minutes (next run at: %s)" % (sleep / 60, dt_next.time())
+                    "Dead for %f.2 minutes (next run at: %s)"
+                    % (sleep / 60, dt_next.time())
                 )
                 time.sleep(sleep)
             else:
@@ -317,12 +325,16 @@ class TWB:
                         and config["bot"]["auto_set_village_names"]
                     ):
                         template = config["bot"]["village_name_template"]
-                        fs = "%0" + str(config["bot"]["village_name_number_length"]) + "d"
+                        fs = (
+                            "%0"
+                            + str(config["bot"]["village_name_number_length"])
+                            + "d"
+                        )
                         num_pad = fs % vnum
                         template = template.replace("{num}", num_pad)
                         vil.village_set_name = template
 
-                    vil.next_event = {'kind': None, 'time': None}
+                    vil.next_event = {"kind": None, "time": None}
                     vil.run(config=config, first_run=vnum == 1)
                     if (
                         vil.get_config(
@@ -352,17 +364,23 @@ class TWB:
                 get_h = time.localtime().tm_hour
                 if get_h in range(active_h[0], active_h[1]):
                     sleep = config["bot"]["active_delay"]
-                    print(f"Seconds until next event for a village: {round(seconds_till_next_event, 2)}")
+                    print(
+                        f"Seconds until next event for a village: {round(seconds_till_next_event, 2)}"
+                    )
                     # if sleep > seconds_till_next_event:
                     #     print("Sleep would be more than the next event for a village!")
                     if sleep < seconds_till_next_event:
-                        print("Sleep is less than the next event for a village! Delaying until next event...")
+                        print(
+                            "Sleep is less than the next event for a village! Delaying until next event..."
+                        )
                         sleep = seconds_till_next_event
                 else:
                     if config["bot"]["inactive_still_active"]:
                         sleep = config["bot"]["inactive_delay"]
                     else:
-                        print("Getting 7 hours of sleep! Probally the session will time-out!!")
+                        print(
+                            "Getting 7 hours of sleep! Probally the session will time-out!!"
+                        )
                         sleep = 25200
 
                 sleep += random.randint(20, 120)
@@ -373,7 +391,8 @@ class TWB:
                     print("Optimizing farms")
                     VillageManager.farm_manager(verbose=True)
                 print(
-                    "Dead for %f minutes (next run at: %s)" % (round(sleep / 60, 2), dt_next.time())
+                    "Dead for %f minutes (next run at: %s)"
+                    % (round(sleep / 60, 2), dt_next.time())
                 )
                 sys.stdout.flush()
                 time.sleep(sleep)

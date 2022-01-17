@@ -52,7 +52,14 @@ class VillageManager:
             if verbose:
                 print(
                     "%sFarm village %s attacked %d times - Total loot: %s - Total units lost: %s (%s)"
-                    % (perf, farm, len(num_attack), str(loot),str(total_loss_count), str(percentage_lost))
+                    % (
+                        perf,
+                        farm,
+                        len(num_attack),
+                        str(loot),
+                        str(total_loss_count),
+                        str(percentage_lost),
+                    )
                 )
             if len(num_attack):
                 total = 0
@@ -91,7 +98,9 @@ class VillageManager:
                         AttackCache.set_cache(farm, data)
 
             if percentage_lost > 20 and not data["low_profile"]:
-                print(f"[Farm Manager] Dangerous {percentage_lost} percentage lost units! Extending farm time")
+                print(
+                    f"[Farm Manager] Dangerous {percentage_lost} percentage lost units! Extending farm time"
+                )
                 data["low_profile"] = True
                 data["high_profile"] = False
                 AttackCache.set_cache(farm, data)
@@ -106,9 +115,15 @@ class VillageManager:
             if r["type"] == "scout" or r["type"] == "attack":
                 if r["losses"] != {}:
                     for unit in r["losses"]:
-                        total_loss_count += r["losses"][unit] * 2 if unit == "light" else r["losses"][unit]
+                        total_loss_count += (
+                            r["losses"][unit] * 2
+                            if unit == "light"
+                            else r["losses"][unit]
+                        )
                     if total_loss_count > 10 and verbose:
-                        print(f"[Farm Manager] Dangerous: {r} -> {total_loss_count} total loss count, extending farm time")
+                        print(
+                            f"[Farm Manager] Dangerous: {r} -> {total_loss_count} total loss count, extending farm time"
+                        )
                     if total_loss_count > 10:
                         data["low_profile"] = True
                         AttackCache.set_cache(farm, data)
@@ -116,7 +131,10 @@ class VillageManager:
         if verbose:
             print("[Farm Manager] Total loot: %s" % t)
 
-        list_of_files = sorted([ "./cache/reports/"+f for f in os.listdir("./cache/reports/")], key=os.path.getctime)
+        list_of_files = sorted(
+            ["./cache/reports/" + f for f in os.listdir("./cache/reports/")],
+            key=os.path.getctime,
+        )
 
         print(f"Found {len(list_of_files)} files")
 

@@ -143,7 +143,7 @@ class MapCache:
         all_villages = []
         # Load all villages from cache!
         for t_path in glob.iglob("cache/villages/*.json"):
-            with open(t_path, 'r') as f:
+            with open(t_path, "r") as f:
                 all_villages.append(json.load(f))
 
         return all_villages

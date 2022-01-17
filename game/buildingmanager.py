@@ -36,7 +36,7 @@ class BuildingManager:
 
     def start_update(self, build=False, set_village_name=None):
         main_data = self.wrapper.get_action(village_id=self.village_id, action="main")
-        
+
         self.costs = Extractor.building_data(main_data)
         self.game_state = Extractor.game_state(main_data)
         vname = self.game_state["village"]["name"]
@@ -44,8 +44,10 @@ class BuildingManager:
             self.logger = logging.getLogger("Builder: %s" % vname)
         # Check if premium account is active or not
         if self.max_queue_len > 2:
-            if self.game_state['features']['Premium']['active'] == False:
-                self.logger.warning(f"Premium account seems to be inactive! You set a max length of {self.max_queue_len}. Without PA only 2 are allowed!")
+            if self.game_state["features"]["Premium"]["active"] == False:
+                self.logger.warning(
+                    f"Premium account seems to be inactive! You set a max length of {self.max_queue_len}. Without PA only 2 are allowed!"
+                )
                 self.max_queue_len = 2
 
         if self.resman:
@@ -60,7 +62,7 @@ class BuildingManager:
                 % self.village_id,
                 data={"name": set_village_name, "h": self.wrapper.last_h},
             )
-        
+
         if self.complete_actions(main_data.text):
             return self.start_update(build=build, set_village_name=set_village_name)
 
@@ -71,7 +73,7 @@ class BuildingManager:
         self.levels = tmp
         # existing_queue = self.get_existing_items(main_data)
         # Load the existing queue with times
-        #if existing_queue != 0 and existing_queue != len(self.waits):
+        # if existing_queue != 0 and existing_queue != len(self.waits):
         self.logger.info("Syncing building queue...")
         self.load_existing_queue(main_data)
         self.logger.info(f"Loaded {len(self.waits)} items from queue")
@@ -146,13 +148,17 @@ class BuildingManager:
     def get_existing_items(self, text):
         waits = Extractor.active_building_queue(text)
         return waits
-    
+
     def load_existing_queue(self, text):
         self.waits, self.waits_building = Extractor.new_active_building_queue(text)
         for idx, b in enumerate(self.waits_building):
             # Update the building level, like queuing a new action
-            self.waits[idx] = (datetime.fromtimestamp(self.waits[idx]) + timedelta(minutes=10)).timestamp()
-            self.logger.debug(f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1} (Finishes at {datetime.fromtimestamp(self.waits[idx])})")
+            self.waits[idx] = (
+                datetime.fromtimestamp(self.waits[idx]) + timedelta(minutes=10)
+            ).timestamp()
+            self.logger.debug(
+                f"{b} upgrading {self.levels[b]} -> {self.levels[b] + 1} (Finishes at {datetime.fromtimestamp(self.waits[idx])})"
+            )
             self.levels[b] += 1
 
     def has_enough(self, build_item):
@@ -196,7 +202,9 @@ class BuildingManager:
             self.resman.request(source="building", resource="pop", amount=req)
             r = False
         if not r:
-            self.logger.debug(f"Requested resources: {self.resman.requested} for {build_item['id']}")
+            self.logger.debug(
+                f"Requested resources: {self.resman.requested} for {build_item['id']}"
+            )
         return r
 
     def get_level(self, building):
@@ -227,10 +235,12 @@ class BuildingManager:
 
         if self.resman and self.resman.in_need_of("pop"):
             if "farm" in self.waits_building:
-                self.logger.info(f"Low on pop, but farm already in queue as number {self.waits_building.index('farm') + 1}!")
+                self.logger.info(
+                    f"Low on pop, but farm already in queue as number {self.waits_building.index('farm') + 1}!"
+                )
                 for x in self.resman.requested:
-                    if 'recruitment_' in x and 'pop' in self.resman.requested[x]:
-                        self.resman.requested[x]['pop'] = 0
+                    if "recruitment_" in x and "pop" in self.resman.requested[x]:
+                        self.resman.requested[x]["pop"] = 0
             else:
                 build_data = "farm:%d" % (int(self.levels["farm"]) + 1)
                 if (

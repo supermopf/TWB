@@ -88,7 +88,7 @@ class AttackManager:
 
         for target in self.targets[0 : self.max_farms]:
             if target in self.priority_targets:
-                continue # Don't farm the prio again
+                continue  # Don't farm the prio again
             if type(self.template) == list:
                 f = False
                 for template in self.template:
@@ -113,12 +113,18 @@ class AttackManager:
                 "spy" not in self.troopmanager.troops
                 or int(self.troopmanager.troops["spy"]) < max_scouts_used
             ):
-                self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Not enough to scout out farms...")
+                self.logger.debug(
+                    f"We have {self.troopmanager.troops['spy']} scouts. Not enough to scout out farms..."
+                )
             else:
-                self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Trying to scout unattacked farms, if not visted in a while...")
+                self.logger.debug(
+                    f"We have {self.troopmanager.troops['spy']} scouts. Trying to scout unattacked farms, if not visted in a while..."
+                )
                 for target in self.targets[0 : self.max_farms]:
                     if int(self.troopmanager.troops["spy"]) < max([5, max_scouts_used]):
-                        self.logger.debug(f"Not enough spys left to scout with. Keeping {self.troopmanager.troops['spy']} in village.")
+                        self.logger.debug(
+                            f"Not enough spys left to scout with. Keeping {self.troopmanager.troops['spy']} in village."
+                        )
                         return
                     if target in attacked:
                         continue
@@ -126,16 +132,20 @@ class AttackManager:
                     cache_entry = AttackCache.get_cache(target["id"])
                     last_report = self.repman.last_report_for(target["id"])
                     if last_report:
-                        last_attack = datetime.fromtimestamp(last_report["extra"]["when"])
-                        if last_report['type'] == 'scout':
+                        last_attack = datetime.fromtimestamp(
+                            last_report["extra"]["when"]
+                        )
+                        if last_report["type"] == "scout":
                             now = datetime.now()
                             if last_attack > now - timedelta(hours=12):
                                 # Last scouted less then 4 hours ago, ignore scouting.
                                 continue
-                            self.logger.debug(f"Last {last_report['type']} report was at {last_attack}")
+                            self.logger.debug(
+                                f"Last {last_report['type']} report was at {last_attack}"
+                            )
                     if not cache_entry:
                         # New target?
-                        self.logger.info(f'Scouting new farm grounds: {target}')
+                        self.logger.info(f"Scouting new farm grounds: {target}")
                     if cache_entry:
                         # Not a new target?
                         last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
@@ -143,7 +153,9 @@ class AttackManager:
                         if last_attack > now - timedelta(hours=12):
                             # Last attack less then 2 hours ago, ignore scouting.
                             continue
-                        self.logger.debug(f"Last attack was at {last_attack}, sending scout...")
+                        self.logger.debug(
+                            f"Last attack was at {last_attack}, sending scout..."
+                        )
                     if not self.scout(target["id"]):
                         # All done for some reason
                         break
@@ -159,20 +171,26 @@ class AttackManager:
                 last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
                 now = datetime.now()
                 if last_attack < now - timedelta(minutes=20):
-                    self.logger.debug(f"Last attack was on {last_attack}, sending again!")
+                    self.logger.debug(
+                        f"Last attack was on {last_attack}, sending again!"
+                    )
                     cached = True
                 else:
                     cached = self.can_attack(vid=target["id"], clear=False)
             else:
                 cached = self.can_attack(vid=target["id"], clear=False)
-            
+
             if cached:
                 attack_result = self.attack(target["id"], troops=template)
                 if attack_result == "forced_peace":
                     return 0
                 self.logger.info(
                     "Attacking %s -> %s (%s)"
-                    % (self.village_id, f'{target["location"][0]}|{target["location"][1]}', str(template))
+                    % (
+                        self.village_id,
+                        f'{target["location"][0]}|{target["location"][1]}',
+                        str(template),
+                    )
                 )
                 self.wrapper.reporter.report(
                     self.village_id,
@@ -226,7 +244,12 @@ class AttackManager:
                     )
                     self.ignored.append(vid)
                 continue
-            if "bonus" in village and village["bonus"] is not None and "bonus/stronghold.png" in village["bonus"] or (village["tribe"] is not None and vid not in self.extra_farm):
+            if (
+                "bonus" in village
+                and village["bonus"] is not None
+                and "bonus/stronghold.png" in village["bonus"]
+                or (village["tribe"] is not None and vid not in self.extra_farm)
+            ):
                 self.logger.debug("Ignore Tribe strongholds!")
                 continue
             if my_village and "points" in my_village and "points" in village:
@@ -303,7 +326,9 @@ class AttackManager:
         troops = {"spy": 5}
         if self.attack(vid, troops=troops):
             # Lower the amount of spys
-            self.troopmanager.troops["spy"] = str(int(self.troopmanager.troops["spy"]) - 5)
+            self.troopmanager.troops["spy"] = str(
+                int(self.troopmanager.troops["spy"]) - 5
+            )
             self.attacked(vid, scout=True, safe=False)
             return True
 
@@ -314,10 +339,12 @@ class AttackManager:
             last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
             now = datetime.now()
             if last_attack < now - timedelta(hours=12):
-                self.logger.debug(f"Attacked long ago({last_attack}), trying scout attack")
+                self.logger.debug(
+                    f"Attacked long ago({last_attack}), trying scout attack"
+                )
                 if self.scout(vid):
                     return False
-        
+
         if not cache_entry:
             status = self.repman.safe_to_engage(vid)
             if status == 1:
@@ -341,8 +368,12 @@ class AttackManager:
                     )
                     return False
                 if status == 0:
-                    if cache_entry["last_attack"] + self.farm_low_prio_wait * 2 > int(time.time()):
-                        self.logger.info(f"{vid}: Old scout report found ({cache_entry['last_attack']}), re-scouting")
+                    if cache_entry["last_attack"] + self.farm_low_prio_wait * 2 > int(
+                        time.time()
+                    ):
+                        self.logger.info(
+                            f"{vid}: Old scout report found ({cache_entry['last_attack']}), re-scouting"
+                        )
                         self.scout(vid)
                         return False
                     else:
@@ -369,17 +400,19 @@ class AttackManager:
             min_time = self.farm_high_prio_wait
         if "low_profile" in cache_entry and cache_entry["low_profile"]:
             min_time = self.farm_low_prio_wait
-        
+
         if cache_entry and self.repman:
             res_left, res = self.repman.has_resources_left(vid)
             total_loot = 0
             for x in res:
                 total_loot += int(res[x])
-            
+
             if res_left and total_loot > 100:
-                self.logger.debug(f"Draining farm of resources! Sending attack to get {res}.")
+                self.logger.debug(
+                    f"Draining farm of resources! Sending attack to get {res}."
+                )
                 min_time = int(self.farm_high_prio_wait / 2)
-            
+
             if total_loot == 0:
                 self.logger.debug(f"Farm empty! Extending farm time!")
                 min_time = int(min_time * 1.5)
@@ -428,7 +461,9 @@ class AttackManager:
         if self.forced_peace_time:
             now = datetime.now()
             if now + timedelta(seconds=duration) > self.forced_peace_time:
-                self.logger.info("Attack would arrive after the forced peace timer, not sending attack!")
+                self.logger.info(
+                    "Attack would arrive after the forced peace timer, not sending attack!"
+                )
                 return "forced_peace"
 
         self.logger.info(

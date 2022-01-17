@@ -5,6 +5,7 @@ from core.extractors import Extractor
 from bs4 import BeautifulSoup as Soup
 import random
 
+
 class ResourceManager:
     actual = {}
 
@@ -42,19 +43,21 @@ class ResourceManager:
         self.logger = logging.getLogger(
             "Resource Manager: %s" % game_state["village"]["name"]
         )
-    
+
     def any_resource_full(self):
-        for res in ['wood', 'stone', 'iron']:
+        for res in ["wood", "stone", "iron"]:
             if self.actual[res] == self.storage:
                 return True
         return False
-    
+
     def manage_full_resource(self):
         if self.any_resource_full():
-            self.logger.info("Village storage is full! Trying to add resource to the market for safe keeping.")
-            for res in ['wood', 'stone', 'iron']:
+            self.logger.info(
+                "Village storage is full! Trying to add resource to the market for safe keeping."
+            )
+            for res in ["wood", "stone", "iron"]:
                 if self.actual[res] == self.storage:
-                    counter = ['stone', 'wood', 'iron']
+                    counter = ["stone", "wood", "iron"]
                     counter.remove(res)
                     c = random.choice(counter)
                     self.logger.info(f"Adding {res} for {c} to market for safe keeping")
@@ -65,20 +68,26 @@ class ResourceManager:
                         else:
                             self.resources_kept_safe[res] = 1000
         elif self.resources_kept_safe != {}:
-            self.logger.info('Kept resources safe, check if we have enough storage to get them back.')
+            self.logger.info(
+                "Kept resources safe, check if we have enough storage to get them back."
+            )
             all_good = True
             for res in self.resources_kept_safe:
                 if self.actual[res] + self.resources_kept_safe[res] >= self.storage:
                     all_good = False
                     break
             if all_good:
-                self.logger.info("Have enough storage to remove all resources from the market!")
+                self.logger.info(
+                    "Have enough storage to remove all resources from the market!"
+                )
                 self.drop_existing_trades()
                 self.resources_kept_safe = {}
 
     def do_premium_stuff(self):
         gpl = self.get_plenty_off()
-        self.logger.debug(f"Trying premium trade: gpl {gpl} do? {self.do_premium_trade}")
+        self.logger.debug(
+            f"Trying premium trade: gpl {gpl} do? {self.do_premium_trade}"
+        )
         if gpl and self.do_premium_trade:
             url = "game.php?village=%s&screen=market&mode=exchange" % self.village_id
             res = self.wrapper.get_url(url=url)
@@ -104,7 +113,7 @@ class ResourceManager:
 
     def check_state(self):
         for source in self.requested:
-            if source == 'snob':
+            if source == "snob":
                 continue
             for res in self.requested[source]:
                 if self.requested[source][res] <= self.actual[res]:
@@ -189,7 +198,7 @@ class ResourceManager:
             return needed_the_most, needed_amount
         return None
 
-    def trade(self, me_item, me_amount, get_item, get_amount, set_trade_time = True):
+    def trade(self, me_item, me_amount, get_item, get_amount, set_trade_time=True):
         url = "game.php?village=%s&screen=market&mode=own_offer" % self.village_id
         res = self.wrapper.get_url(url=url)
         if 'market_merchant_available_count">0' in res.text:
@@ -240,7 +249,7 @@ class ResourceManager:
                     "Removing offer %s from market because it existed too long" % offer
                 )
         self.resources_on_market = {}
-    
+
     def readable_ts(self, seconds):
         seconds -= int(time.time())
         seconds = seconds % (24 * 3600)
@@ -257,9 +266,11 @@ class ResourceManager:
         need_to_drop = False
         for x in self.requested:
             if x in self.resources_on_market:
-                self.logger.debug(f"We need {x} and we are currently offering it on the market.")
+                self.logger.debug(
+                    f"We need {x} and we are currently offering it on the market."
+                )
                 need_to_drop = True
-        
+
         if need_to_drop:
             self.drop_existing_trades()
             # No need to do the market any further
@@ -282,27 +293,38 @@ class ResourceManager:
             need = self.get_needs()
             if need:
                 # check incoming resources
-                url = "game.php?village=%s&screen=market&mode=other_offer" % self.village_id
+                url = (
+                    "game.php?village=%s&screen=market&mode=other_offer"
+                    % self.village_id
+                )
                 res = self.wrapper.get_url(url=url)
-                p = re.compile(r'Aankomend:\s.+\"icon header (.+?)\".+?<\/span>(.+) ', re.M)
+                p = re.compile(
+                    r"Aankomend:\s.+\"icon header (.+?)\".+?<\/span>(.+) ", re.M
+                )
                 incoming = p.findall(res.text)
                 resource_incoming = {}
                 if incoming:
-                    resource_incoming[incoming[0][0].strip()] = int("".join([s for s in incoming[0][1] if s.isdigit()]))
-                    self.logger.info(f"There are resources incoming! {resource_incoming}")
-                
+                    resource_incoming[incoming[0][0].strip()] = int(
+                        "".join([s for s in incoming[0][1] if s.isdigit()])
+                    )
+                    self.logger.info(
+                        f"There are resources incoming! {resource_incoming}"
+                    )
+
                 item, how_many = need
                 how_many = round(how_many, -1)
                 if item in resource_incoming and resource_incoming[item] >= how_many:
-                    self.logger.info(f"Needed {item} already incoming! ({resource_incoming[item]} >= {how_many})")
+                    self.logger.info(
+                        f"Needed {item} already incoming! ({resource_incoming[item]} >= {how_many})"
+                    )
                     return
                 if how_many < 250:
                     return
-                
+
                 self.logger.debug("Checking current market offers")
                 how_many -= self.check_other_offers(item, how_many, plenty)
                 if how_many < 0:
-                    self.logger(f'Traded enough!')
+                    self.logger(f"Traded enough!")
                     return
 
                 if how_many > self.max_trade_amount:
@@ -330,8 +352,10 @@ class ResourceManager:
 
     def get_incoming_resources(self, res):
         soup = Soup(res, features="html.parser")
-        inc = soup.select_one('#market_status_bar table.vis:nth-of-type(2) th:nth-of-type(1)')
-        p = re.compile(r'\"icon header (.+?)\".+?<\/span>(.+?) <', re.S | re.M)
+        inc = soup.select_one(
+            "#market_status_bar table.vis:nth-of-type(2) th:nth-of-type(1)"
+        )
+        p = re.compile(r"\"icon header (.+?)\".+?<\/span>(.+?) <", re.S | re.M)
         incoming = p.findall(str(inc))
         resource_incoming = {}
         for resource, amount_str in incoming:
@@ -339,16 +363,20 @@ class ResourceManager:
                 amount = int("".join([s for s in amount_str if s.isdigit()]))
                 resource_incoming[resource] = amount
             except:
-                self.logger.warning(f'Unable to parse incoming resources! {resource} {amount_str}')
+                self.logger.warning(
+                    f"Unable to parse incoming resources! {resource} {amount_str}"
+                )
                 continue
-        
+
         return resource_incoming
-    
+
     def check_other_offers(self, item, how_many, sell):
         willing_to_sell = self.actual[sell] - self.in_need_amount(sell) - 500
         # Always keep at least 500 in the bank
         if willing_to_sell < 0:
-            self.logger.debug(f"Not willing to sell {sell}. I have {self.actual[sell]} {sell}.")
+            self.logger.debug(
+                f"Not willing to sell {sell}. I have {self.actual[sell]} {sell}."
+            )
             return False
 
         url = "game.php?village=%s&screen=market&mode=other_offer" % self.village_id
@@ -367,8 +395,9 @@ class ResourceManager:
                 self.logger.info("Requested resource already incoming!")
                 return False
 
-        self.logger.debug(f"Found {len(cur_off_tds)} offers on market, willing to sell {willing_to_sell} {sell}")
-
+        self.logger.debug(
+            f"Found {len(cur_off_tds)} offers on market, willing to sell {willing_to_sell} {sell}"
+        )
 
         for tds in cur_off_tds:
             res_offer = re.findall(
@@ -401,8 +430,10 @@ class ResourceManager:
                 post_url = f"game.php?village={self.village_id}&screen=market&mode=other_offer&action=accept_multi&start=0&id={offer['id']}&h={self.wrapper.last_h}"
                 # print(f"Would post: {post_url} {payload}")
                 self.wrapper.post_url(post_url, data=payload)
-                self.actual[offer['wanted']] = self.actual[offer['wanted']] - offer['wanted_amount']
-                return offer['offer_amount']
+                self.actual[offer["wanted"]] = (
+                    self.actual[offer["wanted"]] - offer["wanted_amount"]
+                )
+                return offer["offer_amount"]
             if (
                 offer["offered"] == item
                 and offer["wanted"] == sell
@@ -420,8 +451,10 @@ class ResourceManager:
                 post_url = f"game.php?village={self.village_id}&screen=market&mode=other_offer&action=accept_multi&start=0&id={offer['id']}&h={self.wrapper.last_h}"
                 # print(f"Would post: {post_url} {payload}")
                 self.wrapper.post_url(post_url, data=payload)
-                self.actual[offer['wanted']] = self.actual[offer['wanted']] - offer['wanted_amount']
-                return offer['offer_amount']
+                self.actual[offer["wanted"]] = (
+                    self.actual[offer["wanted"]] - offer["wanted_amount"]
+                )
+                return offer["offer_amount"]
 
         # No useful offers found
         return 0

@@ -50,8 +50,8 @@ class SnobManager:
         game_data = Extractor.game_state(result)
         self.resman.update(game_data)
         # New run, remove old requests
-        if 'snob' in self.resman.requested:
-            self.resman.requested['snob'] = {}
+        if "snob" in self.resman.requested:
+            self.resman.requested["snob"] = {}
 
         can_recruit = re.search(
             r"(?s)</th><th>(\d+)</th></tr>\s*</table><br />", result.text
@@ -82,7 +82,7 @@ class SnobManager:
             )
             return False
         # Get resources for next snob
-        next_snob_resources = re.search(r'train.next_snob = ({.+})', result.text)
+        next_snob_resources = re.search(r"train.next_snob = ({.+})", result.text)
         if next_snob_resources:
             needed = json.loads(next_snob_resources.group(1))
             if self.has_enough(needed):
@@ -95,7 +95,7 @@ class SnobManager:
             else:
                 return False
         else:
-            self.logger.warning('Could not find next snob resources!')
+            self.logger.warning("Could not find next snob resources!")
             return False
 
     def storage_item(self, result):
