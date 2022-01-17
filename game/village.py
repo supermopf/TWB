@@ -1,5 +1,5 @@
 from codecs import decode
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import json
 import os
@@ -107,8 +107,12 @@ class Village:
             return
         if len(self.builder.waits) == 0:
             return
-        self.set_next_event('building', min(self.builder.waits))
-    
+        # Compensate for building quick build
+        next_build = datetime.fromtimestamp(min(self.builder.waits))
+        next_build -= timedelta(minutes=2)
+
+        self.set_next_event("building", int(next_build.timestamp()))
+
     def determine_first_gather_back(self):
         if not self.units:
             return
