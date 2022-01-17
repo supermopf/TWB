@@ -39,6 +39,9 @@ class BuildingManager:
         
         self.costs = Extractor.building_data(main_data)
         self.game_state = Extractor.game_state(main_data)
+        vname = self.game_state["village"]["name"]
+        if not self.logger:
+            self.logger = logging.getLogger("Builder: %s" % vname)
         # Check if premium account is active or not
         if self.max_queue_len > 2:
             if self.game_state['features']['Premium']['active'] == False:
@@ -57,9 +60,7 @@ class BuildingManager:
                 % self.village_id,
                 data={"name": set_village_name, "h": self.wrapper.last_h},
             )
-        vname = self.game_state["village"]["name"]
-        if not self.logger:
-            self.logger = logging.getLogger("Builder: %s" % vname)
+        
         if self.complete_actions(main_data.text):
             return self.start_update(build=build, set_village_name=set_village_name)
 

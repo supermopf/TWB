@@ -23,6 +23,7 @@ class ResourceManager:
     village_id = None
     do_premium_trade = False
     resources_kept_safe = {}
+    resources_on_market = {}
     traded_resources = False
 
     def __init__(self, wrapper=None, village_id=None):
@@ -103,6 +104,8 @@ class ResourceManager:
 
     def check_state(self):
         for source in self.requested:
+            if source == 'snob':
+                continue
             for res in self.requested[source]:
                 if self.requested[source][res] <= self.actual[res]:
                     self.requested[source][res] = 0
@@ -209,6 +212,10 @@ class ResourceManager:
         if set_trade_time:
             self.traded_resources = True
             self.last_trade = int(time.time())
+        if not me_item in self.resources_on_market:
+            self.resources_on_market[me_item] = me_amount
+        else:
+            self.resources_on_market[me_item] += me_amount
         return True
 
     def drop_existing_trades(self):
@@ -232,6 +239,7 @@ class ResourceManager:
                 self.logger.info(
                     "Removing offer %s from market because it existed too long" % offer
                 )
+        self.resources_on_market = {}
     
     def readable_ts(self, seconds):
         seconds -= int(time.time())
@@ -246,6 +254,16 @@ class ResourceManager:
     def manage_market(self, drop_existing=True):
         # Try to 'safe' resources on the market if nessesary
         self.manage_full_resource()
+        need_to_drop = False
+        for x in self.requested:
+            if x in self.resources_on_market:
+                self.logger.debug(f"We need {x} and we are currently offering it on the market.")
+                need_to_drop = True
+        
+        if need_to_drop:
+            self.drop_existing_trades()
+            # No need to do the market any further
+            return
 
         last = self.last_trade + int(3600 * self.trade_max_per_hour)
         if last > int(time.time()):

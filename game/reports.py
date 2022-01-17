@@ -179,7 +179,14 @@ class ReportManager:
                     continue
                 else:
                     if report_type == "ReportAccept":
-                        self.trade_got_accepted = True
+                        players = re.findall(r'data-player="(\d+)"', data.text)
+                        seller = players[0]
+                        buyer = players[1]
+                        if buyer == self.game_state['player']['id']:
+                            self.logger.debug('We bought something on the market')
+                        elif seller == self.game_state['player']['id']:
+                            self.logger.debug('We sold something on the market')
+                            self.trade_got_accepted = True
                     res = self.put(report_id, report_type=report_type)
                     self.last_reports[report_id] = res
         if new == 12 or full_run and page < 20:

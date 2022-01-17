@@ -100,7 +100,7 @@ class Village:
         if len(outgoing) > 0:
             first_back = datetime.fromtimestamp(min(outgoing))
             self.logger.info(f"First attack to land is {first_back} | There are {len(outgoing)} attacks underway.")
-            # self.set_next_event('outgoing', min(outgoing))
+            self.set_next_event('outgoing', min(outgoing))
     
     def determine_next_building_done(self):
         if not self.builder:
@@ -187,8 +187,21 @@ class Village:
     def run_builder(self):
         if not self.builder:
             self.setup_builder()
+        
+        if (
+                self.get_village_config(
+                    self.village_id, parameter="prioritize_snob", default=False
+                )
+                and self.snobman
+                and self.snobman.can_snob
+                and self.snobman.is_incomplete
+            ):
+                self.logger.info("Not building because snob has insufficient funds!")
+                return
 
-        if "research" in self.resman.requested:
+        if 'snob' in self.resman.requested:
+            self.logger.info("Not building because snob has insufficient funds!")
+        elif "research" in self.resman.requested:
             self.logger.info("Not building because research is needed")
         else:
             self.builder.start_update(
@@ -503,6 +516,7 @@ class Village:
         if (
             self.get_village_config(self.village_id, parameter="snobs", default=None)
             and self.builder.levels["snob"] > 0
+            and not 'snob' in self.builder.waits_building
         ):
             if not self.snobman:
                 self.snobman = SnobManager(

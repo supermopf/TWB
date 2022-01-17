@@ -95,10 +95,10 @@ class VillageManager:
                 data["low_profile"] = True
                 data["high_profile"] = False
                 AttackCache.set_cache(farm, data)
-            if percentage_lost > 50 and len(num_attack) > 10:
-                print("[Farm Manager] Farm seems too dangerous/ unprofitable to farm. Setting safe to false!")
-                data["safe"] = False
-                AttackCache.set_cache(farm, data)
+            # if percentage_lost > 50 and len(num_attack) > 10:
+            #     print("[Farm Manager] Farm seems too dangerous/ unprofitable to farm. Setting safe to false!")
+            #     data["safe"] = False
+            #     AttackCache.set_cache(farm, data)
 
         for report in reports:
             r = reports[report]

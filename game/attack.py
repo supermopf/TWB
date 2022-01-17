@@ -116,7 +116,7 @@ class AttackManager:
                 self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Not enough to scout out farms...")
             else:
                 self.logger.debug(f"We have {self.troopmanager.troops['spy']} scouts. Trying to scout unattacked farms, if not visted in a while...")
-                for target in self.targets:
+                for target in self.targets[0 : self.max_farms]:
                     if int(self.troopmanager.troops["spy"]) < max([5, max_scouts_used]):
                         self.logger.debug(f"Not enough spys left to scout with. Keeping {self.troopmanager.troops['spy']} in village.")
                         return
@@ -129,10 +129,10 @@ class AttackManager:
                         last_attack = datetime.fromtimestamp(last_report["extra"]["when"])
                         if last_report['type'] == 'scout':
                             now = datetime.now()
-                            if last_attack > now - timedelta(minutes=120):
-                                # Last scouted less then 2 hours ago, ignore scouting.
+                            if last_attack > now - timedelta(hours=12):
+                                # Last scouted less then 4 hours ago, ignore scouting.
                                 continue
-                        self.logger.debug(f"Last {last_report['type']} report was at {last_attack}, sending scout...")
+                            self.logger.debug(f"Last {last_report['type']} report was at {last_attack}")
                     if not cache_entry:
                         # New target?
                         self.logger.info(f'Scouting new farm grounds: {target}')
@@ -140,7 +140,7 @@ class AttackManager:
                         # Not a new target?
                         last_attack = datetime.fromtimestamp(cache_entry["last_attack"])
                         now = datetime.now()
-                        if last_attack > now - timedelta(minutes=120):
+                        if last_attack > now - timedelta(hours=12):
                             # Last attack less then 2 hours ago, ignore scouting.
                             continue
                         self.logger.debug(f"Last attack was at {last_attack}, sending scout...")
@@ -225,6 +225,9 @@ class AttackManager:
                         % vid
                     )
                     self.ignored.append(vid)
+                continue
+            if "bonus" in village and village["bonus"] is not None and "bonus/stronghold.png" in village["bonus"] or (village["tribe"] is not None and vid not in self.extra_farm):
+                self.logger.debug("Ignore Tribe strongholds!")
                 continue
             if my_village and "points" in my_village and "points" in village:
                 if village["points"] >= self.farm_maxpoints:

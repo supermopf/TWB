@@ -203,7 +203,11 @@
     },
     "farm": [
         {"light": 25, "spy": 1},
-        {"axe": 125, "spy": 1}
+        {"light": 100, "spy": 1},
+        {"axe": 125, "spy": 1},
+        {"spear": 100, "spy": 1},
+        {"light": 10, "spy": 1},
+        {"light": 5, "spy": 1}
     ]
   }
 ]

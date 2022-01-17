@@ -385,23 +385,22 @@ class TroopManager:
                 can_use = [
                         "spear:25",
                         "sword:15",
-                        "axe:10",
+                        # "axe:10",
                         "archer:10",
-                        "light:80",
+                        # "light:80",
                         "marcher:50",
                         "heavy:50",
                         "knight:100",
                     ]
-                if selection > 1:
-                    can_use = [
-                        "axe:10",
-                        "light:80",
-                        "archer:10",
-                        "marcher:50",
-                        "heavy:50",
-                        "knight:100",
-                    ]
-                self.logger.info(f"Can use these: {can_use}")
+                # if selection > 1:
+                #     can_use = [
+                #         "axe:10",
+                #         "light:80",
+                #         "archer:10",
+                #         "marcher:50",
+                #         "heavy:50",
+                #         "knight:100",
+                #     ]
                 payload = {
                     "squad_requests[0][village_id]": self.village_id,
                     "squad_requests[0][option_id]": str(selection),
@@ -410,6 +409,7 @@ class TroopManager:
 
                 total_carry = 0
                 used_troops = []
+                max_use = 100
                 for item in can_use:
                     item, carry = item.split(":")
                     if item == "knight":
@@ -417,10 +417,16 @@ class TroopManager:
                     if item in disabled_units:
                         continue
                     if item in troops and int(troops[item]) > 0:
-                        payload[
-                            "squad_requests[0][candidate_squad][unit_counts][%s]" % item
-                        ] = troops[item]
-                        total_carry += int(carry) * int(troops[item])
+                        if int(troops[item]) > max_use:
+                            payload[
+                                "squad_requests[0][candidate_squad][unit_counts][%s]" % item
+                            ] = max_use
+                            total_carry += int(carry) * max_use
+                        else:
+                            payload[
+                                "squad_requests[0][candidate_squad][unit_counts][%s]" % item
+                            ] = troops[item]
+                            total_carry += int(carry) * int(troops[item])
                         used_troops.append(item)
                     else:
                         payload[
@@ -439,8 +445,9 @@ class TroopManager:
                     self.logger.info(f"Using troops {used_troops} for gather operation: {selection}")
                     send_new_gather = True
                     for troop in used_troops:
-                        self.troops[troop] = 0
-                else:
+                        used = min([max_use,  int(troops[troop])])
+                        self.troops[troop] = int(troops[troop]) - used
+                elif total_carry > 0:
                     self.logger.info(f"Not enough troops to start gather operation: {used_troops} / {total_carry}")
 
             else:
