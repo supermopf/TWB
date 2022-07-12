@@ -74,7 +74,8 @@
       }
     },
     "farm": [
-        {"axe": 5,"spear": 15},
+        {"spear": 20},
+        {"axe": 5, "spear": 10},
         {"light": 5}
     ]
   },
@@ -97,7 +98,8 @@
       }
     },
     "farm": [
-        {"axe": 5,"spear": 15},
+        {"axe": 5,"spear": 10},
+        {"spear": 20},
         {"light": 5}
     ]
   },
