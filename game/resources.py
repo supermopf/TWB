@@ -58,11 +58,18 @@ class ResourceManager:
                 self.logger.info(
                     "Attempting trade of %d %s for premium point" % (prices[gpl], gpl)
                 )
-                self.wrapper.get_api_action(
+                res = self.wrapper.get_api_action(
                     self.village_id,
                     action="exchange_begin",
                     params={"screen": "market"},
                     data={"sell_%s" % gpl: "1"},
+                )
+                rate_hash, amount, mb = Extractor.premium_data_confirm(res)
+                self.wrapper.get_api_action(
+                    self.village_id,
+                    action="exchange_confirm",
+                    params={"screen": "market"},
+                    data={"sell_%s" % gpl: "%s" % amount, "rate_%s" % gpl: "%s" % rate_hash, "mb": "%s" % mb},
                 )
 
     def check_state(self):

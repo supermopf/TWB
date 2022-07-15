@@ -89,6 +89,13 @@ class Extractor:
         return None
 
     @staticmethod
+    def premium_data_confirm(res):
+        rate_hash = res['response'][0]['rate_hash']
+        amount = str(res['response'][0]['amount']).replace("-", "")
+        mb = "1"
+        return rate_hash, amount, mb
+
+    @staticmethod
     def recruit_data(res):
         if type(res) != str:
             res = res.text
