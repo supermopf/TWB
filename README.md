@@ -1,3 +1,7 @@
+### NEW in 1.5.1
+- Fixed selling resources for pp
+- Fixed receiving rewards
+
 ### New in 1.5
 - Nice configuration dashboard
 - Various bug fixes
