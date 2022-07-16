@@ -191,6 +191,7 @@ class Village:
                 "TWB_ATTACK",
                 "Village: %s under attack" % self.game_data["village"]["name"],
             )
+            self.wrapper.discord_notifier.send("Village: %s under attack" % self.game_data["village"]["name"])
 
         # setup and check if village still exists / is accessible
         if self.get_config(section="world", parameter="quests_enabled", default=False):

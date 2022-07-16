@@ -60,11 +60,9 @@ class DefenceManager:
         for u in self.defensive_units:
             if u in self.units.troops and int(self.units.troops[u]) > 0:
                 send_support[u] = int(int(self.units.troops[u]) * self.support_factor)
-
-        self.logger.info(
-            "Sending requested support to village %s: %s"
-            % (requesting_village, str(send_support))
-        )
+        msg = "Sending requested support to village %s: %s" % (requesting_village, str(send_support))
+        self.wrapper.discord_notifier.send(msg)
+        self.logger.info(msg)
         return self.support(requesting_village, troops=send_support)
 
     def update(self, main, with_defence=False):

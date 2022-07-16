@@ -13,6 +13,10 @@
     "enabled": false,
     "connection_string": "file://cache/logs/twb_{ts}.log"
   },
+  "discord": {
+    "enabled": true,
+    "endpoint": "https://discord.com/api/webhooks/xxxxxx"
+  },
   "bot": {
     "active_hours": "6-23",
     "delay_factor": 1.0,
