@@ -259,6 +259,7 @@ class TWB:
         # setup additional builder
         rm = None
         defense_states = {}
+        self.wrapper.discord_notifier.send("TWB starting...")
         while self.should_run:
             if not self.internet_online():
                 print("Internet seems to be down, waiting till its back online...")
