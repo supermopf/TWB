@@ -60,6 +60,15 @@ class Extractor:
         return rewards
 
     @staticmethod
+    def get_daily_reward(res):
+        if type(res) != str:
+            res = res.text
+        get_daily = re.search(r'reward_count_unlocked.*(\d),', res)
+        if get_daily:
+            return get_daily.group(1)
+        return None
+
+    @staticmethod
     def map_data(res):
         if type(res) != str:
             res = res.text

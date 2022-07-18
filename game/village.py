@@ -97,6 +97,7 @@ class Village:
                     "TWB_START",
                     "Starting run for village: %s" % self.game_data["village"]["name"],
                 )
+                self.get_daily_reward(data)
 
         if not self.game_data:
             self.logger.error(
@@ -564,6 +565,21 @@ class Village:
 
         self.logger.debug("There where no (more) quest rewards")
         return len(rewards) > 0
+    
+    def get_daily_reward(self, res):
+        is_daily_reward = Extractor.game_state(res)
+        self.logger.debug("Checking daily reward - %s" % is_daily_reward["player"]["new_daily_bonus"])
+        if is_daily_reward["player"]["new_daily_bonus"] == "1":
+            result_get = self.wrapper.get_url("game.php?village=%s&screen=info_player&mode=daily_bonus" % self.village_id)
+            reward_count_unlocked = Extractor.get_daily_reward(result_get)
+            if reward_count_unlocked:
+                self.logger.debug("Day %s reward is available" % reward_count_unlocked)
+                self.wrapper.post_url(
+                    url="game.php?village=%s&screen=daily_bonus&ajaxaction=open"
+                    % self.village_id,
+                    data={"day": reward_count_unlocked, "h": self.wrapper.last_h, "from_screen": "profile"},
+                )
+        return False
 
     def set_cache_vars(self):
         village_entry = {
