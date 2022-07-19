@@ -1,3 +1,8 @@
+### NEW in 1.6.0
+- Add discord notify
+- The bot will now take the daily reward if available
+- The bot can now use proxy socks
+
 ### NEW in 1.5.1
 - Fixed selling resources for pp
 - Fixed receiving rewards

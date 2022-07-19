@@ -1,8 +1,8 @@
 {
   "build": {
     "name": "tw_bot",
-    "version": "1.5.1",
-    "author": "stefan2200"
+    "version": "1.6.0",
+    "authors": ["stefan2200", "kzn1990"]
   },
   "server": {
     "server": "nlc1",
@@ -14,7 +14,7 @@
     "connection_string": "file://cache/logs/twb_{ts}.log"
   },
   "discord": {
-    "enabled": true,
+    "enabled": false,
     "endpoint": "https://discord.com/api/webhooks/xxxxxx"
   },
   "proxy": {
