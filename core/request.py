@@ -29,14 +29,27 @@ class WebWrapper:
     reporter = None
     delay = 1.0
     discord_notifier = None
+    proxy = {}
 
-    def __init__(self, url, server=None, endpoint=None, reporter_enabled=False, reporter_constr=None, discord_notifier=None, discord_endpoint=None):
+    def __init__(self, url, server=None, endpoint=None, reporter_enabled=False, reporter_constr=None, discord_notifier=None, discord_endpoint=None, proxy_enabled=False, proxy_endpoint=None):
         self.web = requests.session()
+        if proxy_enabled and proxy_endpoint:
+            self.proxy['http'] = proxy_endpoint
+            self.proxy['https'] = proxy_endpoint
+            self.web.proxies = self.proxy
+            self.test_proxy_connection()
+            
         self.auth_endpoint = url
         self.server = server
         self.endpoint = endpoint
         self.reporter = ReporterObject(enabled=reporter_enabled, connection_string=reporter_constr)
         self.discord_notifier = DiscordNotifier(discord_notifier=discord_notifier, discord_endpoint=discord_endpoint)
+
+    def test_proxy_connection(self):
+        res = self.web.get(r'http://jsonip.com')
+        ip = res.json()['ip']
+        self.logger.info("Proxy checker. Your current ip - %s" % ip)
+        input("If IP is correct press any key to continue...")
 
     def post_process(self, response):
         xsrf = re.search('<meta content="(.+?)" name="csrf-token"', response.text)

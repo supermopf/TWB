@@ -242,6 +242,8 @@ class TWB:
             reporter_constr=config["reporting"]["connection_string"],
             discord_notifier=config["discord"]["enabled"],
             discord_endpoint=config["discord"]["endpoint"],
+            proxy_enabled=config["proxy"]["enabled"],
+            proxy_endpoint=config["proxy"]["endpoint"],            
         )
 
         self.wrapper.start()

@@ -17,6 +17,10 @@
     "enabled": true,
     "endpoint": "https://discord.com/api/webhooks/xxxxxx"
   },
+  "proxy": {
+    "enabled": false,
+    "endpoint": "socks5://example.socks.proxy.com:1080"
+  },
   "bot": {
     "active_hours": "6-23",
     "delay_factor": 1.0,
