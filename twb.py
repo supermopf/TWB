@@ -23,6 +23,7 @@ coloredlogs.install(
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("discord_webhook.webhook").setLevel(logging.WARNING)
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -239,6 +240,10 @@ class TWB:
             endpoint=config["server"]["endpoint"],
             reporter_enabled=config["reporting"]["enabled"],
             reporter_constr=config["reporting"]["connection_string"],
+            discord_notifier=config["discord"]["enabled"],
+            discord_endpoint=config["discord"]["endpoint"],
+            proxy_enabled=config["proxy"]["enabled"],
+            proxy_endpoint=config["proxy"]["endpoint"],            
         )
 
         self.wrapper.start()
@@ -256,6 +261,7 @@ class TWB:
         # setup additional builder
         rm = None
         defense_states = {}
+        self.wrapper.discord_notifier.send("TWB starting...")
         while self.should_run:
             if not self.internet_online():
                 print("Internet seems to be down, waiting till its back online...")
