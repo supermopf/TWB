@@ -13,5 +13,6 @@ class DiscordNotifier:
             self.discord_endpoint = discord_endpoint
     
     def send(self, msg):
-        webhook = DiscordWebhook(url=self.discord_endpoint, content=msg)
-        webhook.execute()
+        if self.discord_notifier:
+            webhook = DiscordWebhook(url=self.discord_endpoint, content=msg)
+            webhook.execute()
