@@ -382,6 +382,7 @@ for x in range(3):
         t.start()
     except Exception as e:
         t.wrapper.reporter.report(0, "TWB_EXCEPTION", str(e))
+        t.wrapper.discord.send("TWB crashed, check logs for more information - %s" % str(e))
         print("I crashed :(   %s" % str(e))
         traceback.print_exc()
         pass
