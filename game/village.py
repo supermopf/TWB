@@ -488,6 +488,10 @@ class Village:
         self.resman.update(self.game_data)
         if self.get_config(
             section="world", parameter="trade_for_premium", default=False
+        ):
+            self.resman.check_premium_price()
+        if self.get_config(
+            section="world", parameter="trade_for_premium", default=False
         ) and self.get_village_config(
             self.village_id, parameter="trade_for_premium", default=False
         ):
