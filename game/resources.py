@@ -43,7 +43,7 @@ class ResourceManager:
         url = "game.php?village=%s&screen=market&mode=exchange" % self.village_id
         res = self.wrapper.get_url(url=url)
         data = Extractor.premium_data(res.text)
-        if not data:
+        if not data or not "stock" in data:
             self.logger.warning("Error reading premium data!")
             return False
         price_fetch = ["wood", "stone", "iron"]
