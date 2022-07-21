@@ -7,6 +7,8 @@
 - Fixed selling resources for pp
 - Fixed receiving rewards
 
+### Forked! Every commit and version after this (⬇️) release is developed by me.
+
 ### New in 1.5
 - Nice configuration dashboard
 - Various bug fixes
