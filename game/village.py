@@ -490,7 +490,7 @@ class Village:
             section="world", parameter="trade_for_premium", default=False
         ) and self.get_village_config(
             self.village_id, parameter="trade_for_premium", default=False
-        ):
+        ) and self.builder.get_level("market"):
             # Set the parameter correctly when the config says so.
             self.resman.do_premium_trade = True
             self.resman.do_premium_stuff()

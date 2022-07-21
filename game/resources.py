@@ -60,9 +60,9 @@ class ResourceManager:
 
     def do_premium_stuff(self):
         gpl = self.get_plenty_off()
+        prices = self.check_premium_price()
         self.logger.debug(f"Trying premium trade: gpl {gpl} do? {self.do_premium_trade}")
         if gpl and self.do_premium_trade:
-            prices = self.check_premium_price()
             if prices:
                 self.logger.info("Actual premium prices: %s" % prices)
 
@@ -119,6 +119,7 @@ class ResourceManager:
         for sub in self.actual:
             f = 1
             for sr in self.requested:
+                # if resources is needed for feaure (requested) building > continue
                 if sub in self.requested[sr] and self.requested[sr][sub] > 0:
                     f = 0
             if not f:
@@ -126,12 +127,13 @@ class ResourceManager:
             if sub == "pop":
                 continue
             # self.logger.debug(f"We have {self.actual[sub]} {sub}. Enough? {self.actual[sub]} > {int(self.storage / self.ratio)}")
+            # if more than 40% (ratio 2.5) of the storage 
             if self.actual[sub] > int(self.storage / self.ratio):
                 if self.actual[sub] > most_of:
                     most = sub
                     most_of = self.actual[sub]
-        # if most:
-        #     self.logger.debug(f"We have plenty of {most}")
+        if most:
+            self.logger.debug(f"We have plenty of {most}")
 
         return most
 
