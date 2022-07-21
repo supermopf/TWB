@@ -46,6 +46,9 @@ class ResourceManager:
         if not data:
             self.logger.warning("Error reading premium data!")
             return False
+        if data['village']['buildings']['market'] == "0":
+            self.logger.warning("Village %s doest have market." %self.village_id)
+            return False
         price_fetch = ["wood", "stone", "iron"]
         prices = {}
         real_rate = {}
@@ -63,25 +66,26 @@ class ResourceManager:
         self.logger.debug(f"Trying premium trade: gpl {gpl} do? {self.do_premium_trade}")
         if gpl and self.do_premium_trade:
             prices = self.check_premium_price()
-            self.logger.info("Actual premium prices: %s" % prices)
+            if prices:
+                self.logger.info("Actual premium prices: %s" % prices)
 
-            if gpl in prices and prices[gpl] * 1.1 < self.actual[gpl]:
-                self.logger.info(
-                    "Attempting trade of %d %s for premium point" % (prices[gpl], gpl)
-                )
-                res = self.wrapper.get_api_action(
-                    self.village_id,
-                    action="exchange_begin",
-                    params={"screen": "market"},
-                    data={"sell_%s" % gpl: "1"},
-                )
-                rate_hash, amount, mb = Extractor.premium_data_confirm(res)
-                self.wrapper.get_api_action(
-                    self.village_id,
-                    action="exchange_confirm",
-                    params={"screen": "market"},
-                    data={"sell_%s" % gpl: "%s" % amount, "rate_%s" % gpl: "%s" % rate_hash, "mb": "%s" % mb},
-                )
+                if gpl in prices and prices[gpl] * 1.1 < self.actual[gpl]:
+                    self.logger.info(
+                        "Attempting trade of %d %s for premium point" % (prices[gpl], gpl)
+                    )
+                    res = self.wrapper.get_api_action(
+                        self.village_id,
+                        action="exchange_begin",
+                        params={"screen": "market"},
+                        data={"sell_%s" % gpl: "1"},
+                    )
+                    rate_hash, amount, mb = Extractor.premium_data_confirm(res)
+                    self.wrapper.get_api_action(
+                        self.village_id,
+                        action="exchange_confirm",
+                        params={"screen": "market"},
+                        data={"sell_%s" % gpl: "%s" % amount, "rate_%s" % gpl: "%s" % rate_hash, "mb": "%s" % mb},
+                    )
 
     def check_state(self):
         for source in self.requested:
