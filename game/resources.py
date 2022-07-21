@@ -46,9 +46,6 @@ class ResourceManager:
         if not data:
             self.logger.warning("Error reading premium data!")
             return False
-        if data['village']['buildings']['market'] == "0":
-            self.logger.warning("Village %s doest have market." %self.village_id)
-            return False
         price_fetch = ["wood", "stone", "iron"]
         prices = {}
         real_rate = {}
