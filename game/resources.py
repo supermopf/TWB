@@ -9,6 +9,7 @@ class ResourceManager:
 
     requested = {}
 
+    continent = None
     storage = 0
     ratio = 2.5
     max_trade_amount = 4000
@@ -35,6 +36,7 @@ class ResourceManager:
         )
         self.storage = game_state["village"]["storage_max"]
         self.check_state()
+        self.continent = Extractor.continent(game_state["village"]["display_name"])
         self.logger = logging.getLogger(
             "Resource Manager: %s" % game_state["village"]["name"]
         )
@@ -53,9 +55,9 @@ class ResourceManager:
             prices[p] = data["stock"][p] * data["rates"][p]
             real_rate[p] = 1 / data['rates'][p] / (data["tax"]["buy"] + 1)
             if real_rate[p] < 200:
-                self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.village_id, real_rate[p]))
+                self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
             elif real_rate[p] > 400:
-                self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.village_id, real_rate[p]))
+                self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
         return prices
 
     def do_premium_stuff(self):

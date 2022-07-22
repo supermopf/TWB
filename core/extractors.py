@@ -179,3 +179,9 @@ class Extractor:
             res = res.text
         data = re.findall(r'(?s)class="report-link" data-id="(\d+)"', res)
         return data
+
+    @staticmethod
+    def continent(res):
+        continent = re.search(r'(K\d+)', res)
+        if continent:
+            return continent.group(0)
