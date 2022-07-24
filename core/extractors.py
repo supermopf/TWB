@@ -1,6 +1,6 @@
 import re
 import json
-
+import statistics
 
 class Extractor:
 
@@ -96,6 +96,26 @@ class Extractor:
             result = json.loads(data.group(1), strict=False)
             return result
         return None
+    
+    @staticmethod
+    def premium_exchange_rate(res):
+        if type(res) != str:
+            res = res.text
+        data = re.findall(r'data: (\[\[.+\]\]),', res)
+        rate = {"wood": [], "stone": [], "iron": []}
+        i = 0
+        for x in data:
+            # convert string output to list
+            res = json.loads(x)
+            i += 1
+            # resources have always a static order
+            resource = "wood" if i == 1 else "stone" if i == 2 else "iron"
+            temp_rate = []
+            for y in res:
+                temp_rate.append(float(y[-1]))
+            rate[resource] = int(statistics.mean(temp_rate))
+        return rate
+
 
     @staticmethod
     def premium_data_confirm(res):

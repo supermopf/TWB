@@ -8,6 +8,11 @@ class ResourceManager:
     actual = {}
 
     requested = {}
+    
+    last_notify = {"wood": {"time": 0, "amount": 0},
+                   "iron": {"time": 0, "amount": 0},
+                   "stone": {"time": 0, "amount": 0}
+                  }
 
     continent = None
     storage = 0
@@ -40,24 +45,47 @@ class ResourceManager:
         self.logger = logging.getLogger(
             "Resource Manager: %s" % game_state["village"]["name"]
         )
+        
+    def update_notify_resource(self, resource, amount):
+        timestamp = int(time.time())
+        self.last_notify[resource]["time"] = timestamp
+        self.last_notify[resource]["amount"] = amount
 
     def check_premium_price(self):
         url = "game.php?village=%s&screen=market&mode=exchange" % self.village_id
         res = self.wrapper.get_url(url=url)
         data = Extractor.premium_data(res.text)
+        avg_exchange_rate = Extractor.premium_exchange_rate(res.text)
         if not data or not "stock" in data:
             self.logger.warning("Error reading premium data!")
             return False
         price_fetch = ["wood", "stone", "iron"]
         prices = {}
         real_rate = {}
+        now = int(time.time())
         for p in price_fetch:
             prices[p] = data["stock"][p] * data["rates"][p]
             real_rate[p] = 1 / data['rates'][p] / (data["tax"]["buy"] + 1)
-            if real_rate[p] < 200:
-                self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
-            elif real_rate[p] > 400:
-                self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
+            # if the current exchange rate is 35% below the average
+            if real_rate[p] < avg_exchange_rate[p] * 0.65:
+                # use the notification if current rate is better then than the previous one
+                # or more than 30 minutes have passed since the previous one (antyspam)
+                if (
+                    self.last_notify[p]["amount"] > real_rate[p] 
+                    or (self.last_notify[p]["time"] + 1800) < now
+                ):
+                    self.update_notify_resource(p, real_rate[p])
+                    self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
+            # if the current exchange rate is 45% under the average
+            elif real_rate[p] > avg_exchange_rate[p] * 1.45:
+                # use the notification if current rate is better then than the previous one
+                # or more than 30 minutes have passed since the previous one (antyspam)
+                if (
+                    self.last_notify[p]["amount"] < real_rate[p] 
+                    or (self.last_notify[p]["time"] + 1800) < now
+                ):
+                    self.update_notify_resource(p, real_rate[p])
+                    self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
         return prices
 
     def do_premium_stuff(self):
