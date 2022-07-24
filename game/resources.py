@@ -8,7 +8,13 @@ class ResourceManager:
     actual = {}
 
     requested = {}
+    
+    last_notify = {"wood": {"time": 0, "amount": 0},
+                   "iron": {"time": 0, "amount": 0},
+                   "stone": {"time": 0, "amount": 0}
+                  }
 
+    continent = None
     storage = 0
     ratio = 2.5
     max_trade_amount = 4000
@@ -35,34 +41,58 @@ class ResourceManager:
         )
         self.storage = game_state["village"]["storage_max"]
         self.check_state()
+        self.continent = Extractor.continent(game_state["village"]["display_name"])
         self.logger = logging.getLogger(
             "Resource Manager: %s" % game_state["village"]["name"]
         )
+        
+    def update_notify_resource(self, resource, amount):
+        timestamp = int(time.time())
+        self.last_notify[resource]["time"] = timestamp
+        self.last_notify[resource]["amount"] = amount
 
     def check_premium_price(self):
         url = "game.php?village=%s&screen=market&mode=exchange" % self.village_id
         res = self.wrapper.get_url(url=url)
         data = Extractor.premium_data(res.text)
+        avg_exchange_rate = Extractor.premium_exchange_rate(res.text)
         if not data or not "stock" in data:
             self.logger.warning("Error reading premium data!")
             return False
         price_fetch = ["wood", "stone", "iron"]
         prices = {}
         real_rate = {}
+        now = int(time.time())
         for p in price_fetch:
             prices[p] = data["stock"][p] * data["rates"][p]
             real_rate[p] = 1 / data['rates'][p] / (data["tax"]["buy"] + 1)
-            if real_rate[p] < 200:
-                self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.village_id, real_rate[p]))
-            elif real_rate[p] > 400:
-                self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.village_id, real_rate[p]))
+            # if the current exchange rate is 35% below the average
+            if real_rate[p] < avg_exchange_rate[p] * 0.65:
+                # use the notification if current rate is better then than the previous one
+                # or more than 30 minutes have passed since the previous one (antyspam)
+                if (
+                    self.last_notify[p]["amount"] > real_rate[p] 
+                    or (self.last_notify[p]["time"] + 1800) < now
+                ):
+                    self.update_notify_resource(p, real_rate[p])
+                    self.wrapper.discord_notifier.send("Resource %s has a good sell ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
+            # if the current exchange rate is 45% under the average
+            elif real_rate[p] > avg_exchange_rate[p] * 1.45:
+                # use the notification if current rate is better then than the previous one
+                # or more than 30 minutes have passed since the previous one (antyspam)
+                if (
+                    self.last_notify[p]["amount"] < real_rate[p] 
+                    or (self.last_notify[p]["time"] + 1800) < now
+                ):
+                    self.update_notify_resource(p, real_rate[p])
+                    self.wrapper.discord_notifier.send("Resource %s has a good buy ratio in village - %s (1:%s)" % (p, self.continent, int(real_rate[p])))
         return prices
 
     def do_premium_stuff(self):
         gpl = self.get_plenty_off()
+        prices = self.check_premium_price()
         self.logger.debug(f"Trying premium trade: gpl {gpl} do? {self.do_premium_trade}")
         if gpl and self.do_premium_trade:
-            prices = self.check_premium_price()
             if prices:
                 self.logger.info("Actual premium prices: %s" % prices)
 
@@ -119,6 +149,7 @@ class ResourceManager:
         for sub in self.actual:
             f = 1
             for sr in self.requested:
+                # if resources is needed for feaure (requested) building > continue
                 if sub in self.requested[sr] and self.requested[sr][sub] > 0:
                     f = 0
             if not f:
@@ -126,12 +157,13 @@ class ResourceManager:
             if sub == "pop":
                 continue
             # self.logger.debug(f"We have {self.actual[sub]} {sub}. Enough? {self.actual[sub]} > {int(self.storage / self.ratio)}")
+            # if more than 40% (ratio 2.5) of the storage 
             if self.actual[sub] > int(self.storage / self.ratio):
                 if self.actual[sub] > most_of:
                     most = sub
                     most_of = self.actual[sub]
-        # if most:
-        #     self.logger.debug(f"We have plenty of {most}")
+        if most:
+            self.logger.debug(f"We have plenty of {most}")
 
         return most
 
