@@ -244,7 +244,8 @@ class ResourceManager:
 
         plenty = self.get_plenty_off()
         if plenty and not self.in_need_of(plenty):
-            if need := self.get_needs():
+            need = self.get_needs()
+            if need :
                 # check incoming resources
                 url = f"game.php?village={self.village_id}&screen=market&mode=other_offer"
                 res = self.wrapper.get_url(url=url)
