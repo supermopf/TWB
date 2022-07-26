@@ -31,6 +31,7 @@ class TroopManager:
     game_data = {}
     logger = None
     max_batch_size = 50
+    max_gathering_army = 0.7
     wait_for = {}
 
     _waits = {}
@@ -377,9 +378,9 @@ class TroopManager:
                     if item in disabled_units:
                         continue
                     if item in troops and int(troops[item]) > 0:
-                        payload[f"squad_requests[0][candidate_squad][unit_counts][{item}]"] = int(float(troops[item]) * 0.6)
+                        payload[f"squad_requests[0][candidate_squad][unit_counts][{item}]"] = int(float(troops[item]) * self.max_gathering_army)
 
-                        total_carry += int(carry) * int(float(troops[item]) * 0.6)
+                        total_carry += int(carry) * int(float(troops[item]) * self.max_gathering_army)
                     else:
                         payload[f"squad_requests[0][candidate_squad][unit_counts][{item}]"] = "0"
                 payload["squad_requests[0][candidate_squad][carry_max]"] = str(total_carry)
