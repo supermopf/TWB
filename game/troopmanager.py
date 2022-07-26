@@ -329,7 +329,7 @@ class TroopManager:
     def gather(self, selection=1, disabled_units=[]):
         if not self.can_gather:
             return False
-        url = "game.php?village=%s&screen=place&mode=scavenge" % self.village_id
+        url = f"game.php?village={self.village_id}&screen=place&mode=scavenge"
         result = self.wrapper.get_url(url=url)
         village_data = Extractor.village_data(result)
 
@@ -337,11 +337,11 @@ class TroopManager:
 
         for option in reversed(sorted(village_data['options'].keys())):
             self.logger.debug(f"Option: {option} Locked? {village_data['options'][option]['is_locked']} Is underway? {village_data['options'][option]['scavenging_squad'] != None }")
-            if int(option) <= selection and not village_data['options'][option]['is_locked'] and not village_data['options'][option]['scavenging_squad'] != None:
+            if int(option) == selection and not village_data['options'][option]['is_locked'] and village_data['options'][option]['scavenging_squad'] is None:
                 available_selection = int(option)
                 self.logger.info(f"Gather operation {available_selection} is ready to start.")
                 selection = available_selection
-            
+
                 troops = dict(self.troops)
                 can_use = [
                         "spear:25",
@@ -377,14 +377,11 @@ class TroopManager:
                     if item in disabled_units:
                         continue
                     if item in troops and int(troops[item]) > 0:
-                        payload[
-                            "squad_requests[0][candidate_squad][unit_counts][%s]" % item
-                        ] = troops[item]
-                        total_carry += int(carry) * int(troops[item])
+                        payload[f"squad_requests[0][candidate_squad][unit_counts][{item}]"] = int(float(troops[item]) * 0.6)
+
+                        total_carry += int(carry) * int(float(troops[item]) * 0.6)
                     else:
-                        payload[
-                            "squad_requests[0][candidate_squad][unit_counts][%s]" % item
-                        ] = "0"
+                        payload[f"squad_requests[0][candidate_squad][unit_counts][{item}]"] = "0"
                 payload["squad_requests[0][candidate_squad][carry_max]"] = str(total_carry)
                 if total_carry > 0:
                     payload["h"] = self.wrapper.last_h
@@ -396,10 +393,6 @@ class TroopManager:
                     )
                     self.last_gather = int(time.time())
                     self.logger.info(f"Using troops for gather operation: {selection}")
-            else:
-                # Gathering already exists or locked
-                pass
-        
         self.logger.info("All gather operations are underway.")
         return True
 
