@@ -1,7 +1,7 @@
 {
   "build": {
     "name": "tw_bot",
-    "version": "1.6.1",
+    "version": "1.6.2",
     "authors": ["stefan2200", "kzn1990"]
   },
   "server": {
