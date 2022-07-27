@@ -192,7 +192,7 @@ class Village:
                 "TWB_ATTACK",
                 "Village: %s under attack" % self.game_data["village"]["name"],
             )
-            self.wrapper.discord_notifier.send("Village: %s under attack" % self.game_data["village"]["name"])
+            self.wrapper.discord.send("Village: %s under attack" % self.game_data["village"]["name"])
 
         # setup and check if village still exists / is accessible
         if self.get_config(section="world", parameter="quests_enabled", default=False):
@@ -490,7 +490,7 @@ class Village:
             section="world", parameter="trade_for_premium", default=False
         ) and self.get_village_config(
             self.village_id, parameter="trade_for_premium", default=False
-        ):
+        ) and self.builder.get_level("market"):
             # Set the parameter correctly when the config says so.
             self.resman.do_premium_trade = True
             self.resman.do_premium_stuff()

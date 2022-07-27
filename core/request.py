@@ -28,10 +28,11 @@ class WebWrapper:
     auth_endpoint = None
     reporter = None
     delay = 1.0
+    discord = None
     discord_notifier = None
     proxy = {}
 
-    def __init__(self, url, server=None, endpoint=None, reporter_enabled=False, reporter_constr=None, discord_notifier=None, discord_endpoint=None, proxy_enabled=False, proxy_endpoint=None):
+    def __init__(self, url, server=None, endpoint=None, reporter_enabled=False, reporter_constr=None, discord=None, discord_endpoint=None, discord_notifier=None, discord_notifier_endpoint=None, proxy_enabled=False, proxy_endpoint=None):
         self.web = requests.session()
         if proxy_enabled and proxy_endpoint:
             self.proxy['http'] = proxy_endpoint
@@ -43,7 +44,8 @@ class WebWrapper:
         self.server = server
         self.endpoint = endpoint
         self.reporter = ReporterObject(enabled=reporter_enabled, connection_string=reporter_constr)
-        self.discord_notifier = DiscordNotifier(discord_notifier=discord_notifier, discord_endpoint=discord_endpoint)
+        self.discord = DiscordNotifier(discord=discord, discord_endpoint=discord_endpoint)
+        self.discord_notifier = DiscordNotifier(discord=discord_notifier, discord_endpoint=discord_notifier_endpoint)
 
     def test_proxy_connection(self):
         res = self.web.get(r'http://jsonip.com')
@@ -78,7 +80,7 @@ class WebWrapper:
             if 'data-bot-protect="forced"' in res.text:
                 msg = "Bot protection hit! Cannot continue. Solve captcha and restart"
                 self.logger.warning(msg)
-                self.discord_notifier.send(msg)
+                self.discord.send(msg)
                 self.reporter.report(0, "TWB_RECAPTCHA", "Stopping bot, press any key once captcha has been solved")
                 input("Press any key...")
                 return self.get_url(url, headers)
@@ -115,7 +117,7 @@ class WebWrapper:
                 else:
                     msg = "Current session cache not valid. Waiting for new cookie."
                     self.logger.warning(msg)
-                    self.discord_notifier.send(msg)
+                    self.discord.send(msg)
         self.web.cookies.clear()
         cinp = input("Enter browser cookie string> ")
         cookies = {}

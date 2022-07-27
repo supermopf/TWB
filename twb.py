@@ -240,8 +240,10 @@ class TWB:
             endpoint=config["server"]["endpoint"],
             reporter_enabled=config["reporting"]["enabled"],
             reporter_constr=config["reporting"]["connection_string"],
-            discord_notifier=config["discord"]["enabled"],
+            discord=config["discord"]["enabled"],
             discord_endpoint=config["discord"]["endpoint"],
+            discord_notifier=config["discord_notify"]["enabled"],
+            discord_notifier_endpoint=config["discord_notify"]["endpoint"],
             proxy_enabled=config["proxy"]["enabled"],
             proxy_endpoint=config["proxy"]["endpoint"],            
         )
@@ -261,7 +263,7 @@ class TWB:
         # setup additional builder
         rm = None
         defense_states = {}
-        self.wrapper.discord_notifier.send("TWB starting...")
+        self.wrapper.discord.send("TWB starting...")
         while self.should_run:
             if not self.internet_online():
                 print("Internet seems to be down, waiting till its back online...")
@@ -380,6 +382,7 @@ for x in range(3):
         t.start()
     except Exception as e:
         t.wrapper.reporter.report(0, "TWB_EXCEPTION", str(e))
+        t.wrapper.discord.send("TWB crashed, check logs for more information - %s" % str(e))
         print("I crashed :(   %s" % str(e))
         traceback.print_exc()
         pass

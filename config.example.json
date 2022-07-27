@@ -1,7 +1,7 @@
 {
   "build": {
     "name": "tw_bot",
-    "version": "1.6.0",
+    "version": "1.6.2",
     "authors": ["stefan2200", "kzn1990"]
   },
   "server": {
@@ -14,6 +14,10 @@
     "connection_string": "file://cache/logs/twb_{ts}.log"
   },
   "discord": {
+    "enabled": false,
+    "endpoint": "https://discord.com/api/webhooks/xxxxxx"
+  },
+  "discord_notify": {
     "enabled": false,
     "endpoint": "https://discord.com/api/webhooks/xxxxxx"
   },
