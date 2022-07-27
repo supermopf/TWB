@@ -31,7 +31,7 @@ class TroopManager:
     game_data = {}
     logger = None
     max_batch_size = 50
-    max_gathering_army = 0.7
+    max_gathering_army = 0.85
     wait_for = {}
 
     _waits = {}
