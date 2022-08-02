@@ -8,9 +8,9 @@
         "spear": 20
       }
     },
-    "farm": {
-      "spear": 20
-    }
+    "farm": [
+        {"spear": 2, "sword": 2}
+    ]
   },
   {
     "building": "barracks",
@@ -22,9 +22,7 @@
       }
     },
     "farm": [
-        {"spear": 20, "knight": 1},
-        {"spear": 20},
-        {"spear": 15, "sword": 20}
+        {"spear": 2, "sword": 2}
     ]
   },
   {
@@ -40,9 +38,7 @@
       }
     },
     "farm": [
-        {"spear": 20, "knight": 1},
-        {"spear": 20},
-        {"spear": 15, "sword": 20}
+        {"spear": 2, "sword": 2}
     ]
   },
   {
@@ -55,9 +51,7 @@
       }
     },
     "farm": [
-        {"spear": 20, "knight": 1},
-        {"spear": 20},
-        {"spear": 15, "sword": 20}
+        {"spear": 20, "knight": 1}
     ]
   },
   {
@@ -67,7 +61,7 @@
       "barracks": {
         "spear": 150,
         "archer": 10,
-        "sword": 70
+        "sword": 150
       },
       "stable": {
         "spy": 10,
@@ -75,7 +69,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   },
   {
@@ -87,8 +81,8 @@
     },
     "build": {
       "barracks": {
-        "spear": 200,
-        "sword": 150,
+        "spear": 350,
+        "sword": 200,
         "archer": 50
       },
       "stable": {
@@ -97,7 +91,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   },
   {
@@ -115,7 +109,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   },
   {
@@ -138,7 +132,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   },
   {
@@ -158,11 +152,11 @@
       "stable": {
         "spy": 350,
         "light": 200,
-        "heavy": 200
+        "heavy": 50
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   },
   {
@@ -188,7 +182,7 @@
       }
     },
     "farm": [
-        {"light": 5}
+        {"light": 2}
     ]
   }
 ]
