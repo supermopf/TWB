@@ -67,19 +67,19 @@ class ResourceManager:
             # if the current exchange rate is 35% below the average
             if real_rate[p] < avg_exchange_rate[p] * 0.65:
                 # use the notification if current rate is better then than the previous one
-                # or more than 30 minutes have passed since the previous one (antyspam)
+                # or more than 60 minutes have passed since the previous one (antyspam)
                 if (
                     self.last_notify[p]["amount"] > real_rate[p] 
-                    or self.last_notify[p]["time"] + 1800 < now
+                    or self.last_notify[p]["time"] + 3600 < now
                 ):
                     self.update_notify_resource(p, real_rate[p])
                     self.wrapper.discord_notifier.send(f"Resource {p} has a good sell ratio in {self.continent} (1:{int(real_rate[p])})")
             elif real_rate[p] > avg_exchange_rate[p] * 1.45:
                 # use the notification if current rate is better then than the previous one
-                # or more than 30 minutes have passed since the previous one (antyspam)
+                # or more than 60 minutes have passed since the previous one (antyspam)
                 if (
                     self.last_notify[p]["amount"] < real_rate[p] 
-                    or self.last_notify[p]["time"] + 1800 < now
+                    or self.last_notify[p]["time"] + 3600 < now
                 ):
                     self.update_notify_resource(p, real_rate[p])
                     self.wrapper.discord_notifier.send(f"Resource {p} has a good buy ratio in {self.continent} (1:{int(real_rate[p])})")
