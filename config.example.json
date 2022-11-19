@@ -6,7 +6,7 @@
   },
   "server": {
     "server": "nlc1",
-    "endpoint": "https://nlc1.tribalwars.nl/game.php",
+    "endpoint": "https://fr68.guerretribale.fr/game.php",
     "server_on_twplus": false
   },
   "reporting": {
