@@ -189,7 +189,7 @@ class BotManager:
 
     def start(self):
         wd = os.path.join(os.getcwd(), "..")
-        proc = subprocess.Popen("python twb.py", cwd=wd, shell=True)
+        proc = subprocess.Popen("python3 twb.py", cwd=wd, shell=True)
         self.pid = proc.pid
         print("Bot started successfully")
 
