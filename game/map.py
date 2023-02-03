@@ -32,17 +32,30 @@ class Map:
                 data = tile["data"]
                 x = int(data["x"])
                 y = int(data["y"])
-                for lon in data["villages"]:
-                    try:
-                        for lat in data["villages"][lon]:
-                            coords = [x + int(lon), y + int(lat)]
-                            entry = data["villages"][lon][lat]
-                            if entry[0] == str(self.village_id):
-                                self.my_location = coords
-
-                            self.build_cache_entry(location=coords, entry=entry)
-                    except:
+                vdata = data["villages"]
+                # Fix broken parsing                 
+                if type(vdata) is dict:
+                    cdata = [{}] * 20
+                    for k, v in vdata.items():
+                        if type(v) is not dict:
+                            cdata[int(k)] = {0: item[0:] for item in v}
+                        else:
+                            cdata[int(k)] = v
+                    vdata = cdata
+                for lon, val in enumerate(vdata):
+                    if not val:
                         continue
+                    # Force dict type to iterate properly
+                    if type(val) != dict:
+                        val = {i: val[i] for i in range(0, len(val))}
+                    for lat, entry in val.items():
+                        if not lat:
+                            continue
+                        coords = [x + int(lon), y + int(lat)]
+                        if entry[0] == str(self.village_id):
+                            self.my_location = coords
+
+                        self.build_cache_entry(location=coords, entry=entry)
                 if not self.my_location:
                     self.my_location = [
                         game_state["village"]["x"],
@@ -86,7 +99,7 @@ class Map:
     def build_cache_entry(self, location, entry):
         vid = entry[0]
         name = entry[2]
-        points = int(entry[3].replace(".", ""))
+        points = int(entry[3].replace(".", "")) if entry[3] != "" else 0
         player = entry[4]
         bonus = entry[6]
         clan = entry[11]

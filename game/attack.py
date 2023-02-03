@@ -24,6 +24,7 @@ class AttackManager:
     repman = None
     resman = None
     target_high_points = False
+    farm_radius = 50
     farm_minpoints = 0
     farm_maxpoints = 1000
     ignored = []
@@ -290,12 +291,19 @@ class AttackManager:
                         % vid
                     )
                     continue
-
+            distance = self.map.get_dist(village["location"])
+            if distance > self.farm_radius:
+                if vid not in self.ignored:
+                    self.logger.debug(
+                        "Village %s will be ignored because it is too far away: distance is %f, max is %d"
+                        % (vid, distance, self.farm_radius)
+                    )
+                    self.ignored.append(vid)
+                continue
             if vid in self.ignored:
                 self.logger.debug("Removed %s from farm ignore list" % vid)
                 self.ignored.remove(vid)
 
-            distance = self.map.get_dist(village["location"])
             output.append([village, distance])
         self.logger.info(
             "Farm targets: %d Ignored targets: %d" % (len(output), len(self.ignored))

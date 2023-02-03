@@ -1,3 +1,22 @@
+### NEW in 1.6.2
+- discord notifier pp ratio as external object with a lot more logic
+- added calculation of the weekly average for pp
+- now bot will send msg to discord when crashed
+- fixed bug with trading pp when market does not not exist
+- now bot for gathering will send 85% of all army by default
+- some code refactor and few bug fixes
+
+### NEW in 1.6.0
+- Add discord notify
+- The bot will now take the daily reward if available
+- The bot can now use proxy socks
+
+### NEW in 1.5.1
+- Fixed selling resources for pp
+- Fixed receiving rewards
+
+### Forked! Every commit and version after this (⬇️) release is developed by me.
+
 ### New in 1.5
 - Nice configuration dashboard
 - Various bug fixes

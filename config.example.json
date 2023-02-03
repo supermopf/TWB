@@ -1,17 +1,29 @@
 {
   "build": {
     "name": "tw_bot",
-    "version": "1.5.1",
-    "author": "stefan2200"
+    "version": "1.6.2",
+    "authors": ["stefan2200", "kzn1990"]
   },
   "server": {
     "server": "nlc1",
-    "endpoint": "https://nlc1.tribalwars.nl/game.php",
+    "endpoint": "https://fr68.guerretribale.fr/game.php",
     "server_on_twplus": false
   },
   "reporting": {
     "enabled": false,
     "connection_string": "file://cache/logs/twb_{ts}.log"
+  },
+  "discord": {
+    "enabled": false,
+    "endpoint": "https://discord.com/api/webhooks/xxxxxx"
+  },
+  "discord_notify": {
+    "enabled": false,
+    "endpoint": "https://discord.com/api/webhooks/xxxxxx"
+  },
+  "proxy": {
+    "enabled": false,
+    "endpoint": "socks5://example.socks.proxy.com:1080"
   },
   "bot": {
     "active_hours": "6-23",
